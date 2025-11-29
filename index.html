@@ -214,7 +214,10 @@
                 </button>
             </div>
             
-            <button onclick="window.resetAllData()" class="absolute bottom-2 right-2 text-[10px] text-gray-600 hover:text-red-400 p-2">Verileri Sil</button>
+            <!-- DEĞİŞİKLİK: Verileri Sil butonu daha temiz bir konuma alındı -->
+            <div class="mt-6">
+                 <button onclick="window.resetAllData()" class="text-[10px] text-gray-500 hover:text-red-400 border-b border-transparent hover:border-red-400 transition pb-0.5">Tüm Verileri Sıfırla</button>
+            </div>
         </div>
 
         <!-- 2. OYUN MERKEZİ -->
@@ -318,7 +321,7 @@
             <div class="text-8xl mb-6 animate-bounce">🏆</div>
             <h2 class="text-4xl font-bold text-white mb-2">Oyun Bitti!</h2>
             <div class="text-center mb-8 bg-white/10 p-6 rounded-3xl w-full max-w-xs border border-white/10">
-                <div class="text-gray-400 text-sm uppercase tracking-widest mb-2">Kazanılan Puan</div>
+                <div class="text-gray-400 text-sm uppercase tracking-widest mb-2">Bu Oturumda Kazanılan XP</div>
                 <div class="text-6xl font-bold text-green-400 drop-shadow-lg">+<span id="earnedXP">0</span></div>
             </div>
             <div class="flex gap-4 w-full max-w-xs">
@@ -441,7 +444,14 @@
                         } else {
                             saveDataHybrid(); 
                         }
-                        finishLoading();
+                        
+                        // DEĞİŞİKLİK: Eğer oyun zaten yüklendiyse (loading overlay gizliyse),
+                        // finishLoading() çağırıp ekranı resetleme, sadece UI güncelle.
+                        if (!document.getElementById('loadingOverlay').classList.contains('hidden')) {
+                            finishLoading();
+                        } else {
+                            updateUI();
+                        }
                     }, (error) => {
                         console.error("Veri okuma hatası:", error);
                         isOffline = true;
@@ -528,9 +538,19 @@
         let activeGameMode = "";
         let gameTimer = null;
         let isGameActive = false;
+        // DEĞİŞİKLİK: Oturum bazlı XP takibi eklendi
+        let currentSessionXP = 0;
 
         const BTN_DEFAULT = "bg-white/10 border border-white/20 rounded-lg py-3 text-sm font-bold hover:bg-white/20 transition cursor-pointer";
         const BTN_SELECTED = "bg-blue-600 text-white border border-blue-400 rounded-lg py-3 text-sm font-bold shadow-lg transform scale-105 transition cursor-pointer";
+
+        // DEĞİŞİKLİK: XP Kazanma fonksiyonu - Anlık kaydetme
+        function gainXP(amount) {
+            playerData.xp += amount;
+            currentSessionXP += amount;
+            saveDataHybrid(); // Her doğru cevapta kaydet
+            updateUI();
+        }
 
         window.initGame = () => {
              createStars();
@@ -595,6 +615,8 @@
             playSound('click'); hideAll();
             // DEĞİŞİKLİK: Oyun başladı, ekranı kilitle
             document.body.classList.add('game-mode');
+            // Yeni oyun için session sıfırla
+            currentSessionXP = 0;
             
             document.getElementById('opsPlayerRocket').style.visibility = 'visible';
             document.getElementById('energyShip').style.visibility = 'visible';
@@ -612,15 +634,16 @@
 
         // --- GAME END ---
         function endGame(score) {
+            // Not: score parametresi artık kullanılmıyor, çünkü anlık XP ekleniyor.
             isGameActive = false; clearInterval(gameTimer); hideAll();
-            const xp = Math.ceil(score / 5); 
-            playerData.xp += xp; 
-            updateUI(); 
+            
+            // Son bir kez garanti olsun diye kaydet
             saveDataHybrid(); 
             // Oyun bitti, menüye döndük, kilidi aç
             document.body.classList.remove('game-mode');
             
-            document.getElementById('earnedXP').textContent = xp; 
+            // DEĞİŞİKLİK: Sadece bu oturumda kazanılanı göster
+            document.getElementById('earnedXP').textContent = currentSessionXP; 
             document.getElementById('gameOverScreen').classList.remove('hidden');
         }
 
@@ -659,7 +682,17 @@
                 const btn = document.createElement('button'); btn.className = "bg-white/10 border border-white/20 py-4 rounded-xl text-3xl font-bold hover:bg-white/20 transition shadow-lg"; btn.textContent = op;
                 btn.onclick = () => {
                     clearInterval(gameTimer);
-                    if(op === ans) { playSound('correct'); btn.classList.add('bg-green-500'); qScore += 100 + Math.floor(parseFloat(document.getElementById('quizTime').textContent)*10); updateQuizScore(); setTimeout(nextQuizQuestion, 500); }
+                    if(op === ans) { 
+                        playSound('correct'); 
+                        btn.classList.add('bg-green-500'); 
+                        // DEĞİŞİKLİK: Skor ve XP anlık hesaplanır
+                        const turnScore = 100 + Math.floor(parseFloat(document.getElementById('quizTime').textContent)*10);
+                        qScore += turnScore;
+                        gainXP(Math.ceil(turnScore / 5)); // XP kazan
+                        
+                        updateQuizScore(); 
+                        setTimeout(nextQuizQuestion, 500); 
+                    }
                     else { playSound('wrong'); btn.classList.add('bg-red-500', 'shake-wrong'); setTimeout(() => endGame(qScore), 1000); }
                 }; container.appendChild(btn);
             });
@@ -695,7 +728,15 @@
             requestAnimationFrame(() => { laser.style.transition = 'width 0.2s linear'; laser.style.width = length + 'px'; });
             setTimeout(() => {
                 laser.remove();
-                if(val === opsTargetAns) { playSound('boom'); createExplosion(tRect.left + tRect.width/2, tRect.top + tRect.height/2); targetBtn.style.visibility = 'hidden'; opsScore += 100; document.getElementById('opsScore').textContent = opsScore; setTimeout(nextOpsWave, 500); } 
+                if(val === opsTargetAns) { 
+                    playSound('boom'); 
+                    createExplosion(tRect.left + tRect.width/2, tRect.top + tRect.height/2); 
+                    targetBtn.style.visibility = 'hidden'; 
+                    opsScore += 100; 
+                    gainXP(20); // DEĞİŞİKLİK: XP anlık ekle
+                    document.getElementById('opsScore').textContent = opsScore; 
+                    setTimeout(nextOpsWave, 500); 
+                } 
                 else { playSound('wrong'); targetBtn.classList.add('bg-red-500'); playerDeathSequence(opsScore, opsTargetAns); }
             }, 200);
         }
@@ -717,7 +758,17 @@
                 const fall = setInterval(() => {
                     if(!isGameActive || document.getElementById('energyScreen').classList.contains('hidden')) { clearInterval(fall); m.remove(); return; }
                     topPos += speed; m.style.top = topPos + 'px';
-                    if(topPos > 330 && topPos < 380) { if(energyLane === i) { clearInterval(fall); m.remove(); if(ans === currentEnergyAns) { playSound('correct'); energyScoreVal += 50; document.getElementById('energyScore').textContent = energyScoreVal; document.querySelectorAll('.energy-orb').forEach(x=>x.remove()); setTimeout(spawnEnergyWave, 500); } else { playSound('wrong'); playerDeathSequence(energyScoreVal, currentEnergyAns); } } }
+                    if(topPos > 330 && topPos < 380) { if(energyLane === i) { 
+                        clearInterval(fall); m.remove(); 
+                        if(ans === currentEnergyAns) { 
+                            playSound('correct'); 
+                            energyScoreVal += 50; 
+                            gainXP(10); // DEĞİŞİKLİK: XP anlık ekle
+                            document.getElementById('energyScore').textContent = energyScoreVal; 
+                            document.querySelectorAll('.energy-orb').forEach(x=>x.remove()); 
+                            setTimeout(spawnEnergyWave, 500); 
+                        } else { playSound('wrong'); playerDeathSequence(energyScoreVal, currentEnergyAns); } 
+                    } }
                     if(topPos > 420) { clearInterval(fall); m.remove(); if(ans === currentEnergyAns) playerDeathSequence(energyScoreVal, currentEnergyAns); }
                 }, 20);
             });
@@ -743,8 +794,11 @@
                         document.getElementById('memMoves').textContent = parseInt(document.getElementById('memMoves').textContent)+1;
                         if(flippedCards[0].card.val === flippedCards[1].card.val) {
                             playSound('correct'); flippedCards.forEach(f => f.el.classList.add('matched')); matchedPairs++; document.getElementById('memPairsLeft').textContent = totalPairs - matchedPairs;
+                            
+                            gainXP(20); // DEĞİŞİKLİK: Her çift için XP anlık ekle
+
                             const popup = document.getElementById('memPopup'); document.getElementById('memPopupText').textContent = card.full.replace('x', ' x ').replace('=', ' = '); popup.classList.add('show');
-                            setTimeout(() => { popup.classList.remove('show'); flippedCards.forEach(f => { f.el.classList.remove('matched'); f.el.classList.add('solved'); }); flippedCards = []; if(matchedPairs === totalPairs) setTimeout(() => endGame(500), 500); }, 1500);
+                            setTimeout(() => { popup.classList.remove('show'); flippedCards.forEach(f => { f.el.classList.remove('matched'); f.el.classList.add('solved'); }); flippedCards = []; if(matchedPairs === totalPairs) setTimeout(() => endGame(0), 500); }, 1500);
                         } else { playSound('wrong'); setTimeout(() => { flippedCards.forEach(f => f.el.classList.remove('flipped')); flippedCards = []; }, 1000); }
                     }
                 }; grid.appendChild(el);
