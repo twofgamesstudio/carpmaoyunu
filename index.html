@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uzay Macerası: Matematik Üssü v24</title>
+    <title>Uzay Macerası: Matematik Üssü v27</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Türkçe karakter desteği */
@@ -65,6 +65,17 @@
         }
         .arrow-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
 
+        /* --- CAN SİSTEMİ --- */
+        .hearts-container { display: flex; gap: 4px; justify-content: center; align-items: center; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .heart-icon { font-size: 1.5rem; color: #ef4444; transition: transform 0.2s, filter 0.2s; filter: drop-shadow(0 0 5px rgba(239,68,68,0.6)); }
+        .heart-icon.lost { color: #334155; transform: scale(0.8); filter: none; }
+
+        .damage-flash {
+            position: fixed; inset: 0; background: red; opacity: 0; pointer-events: none; z-index: 800;
+            transition: opacity 0.1s;
+        }
+        .damage-flash.active { opacity: 0.3; }
+
         /* --- OYUN İÇİ --- */
         .explosion {
             position: absolute; pointer-events: none; width: 120px; height: 120px;
@@ -110,7 +121,14 @@
             border-radius: 4px; z-index: 15; transform-origin: bottom center; transition: height 0.2s linear;
         }
 
-        #energyGameArea { position: relative; width: 100%; height: 400px; overflow: hidden; background: rgba(0,0,0,0.3); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); }
+        #energyGameArea { position: relative; width: 100%; height: 400px; overflow: hidden; background: rgba(0,0,0,0.3); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); touch-action: none; }
+        
+        /* Şerit Çizgileri */
+        .lane-divider {
+            position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.05); z-index: 0;
+            border-left: 1px dashed rgba(255,255,255,0.1);
+        }
+
         .energy-orb {
             position: absolute; width: 60px; height: 60px;
             background: radial-gradient(circle at 30% 30%, #67e8f9, #0ea5e9);
@@ -122,18 +140,24 @@
         
         #energyShip {
             position: absolute; bottom: 10px; left: 50%; 
+            /* Rotasyon ve merkezleme düzeltildi */
             transform: translateX(-50%) rotate(-45deg);
+            transform-origin: 50% 50%;
             width: 60px; height: 60px; font-size: 3.5rem; text-align: center; z-index: 20;
-            transition: left 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            transition: left 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             filter: drop-shadow(0 0 15px cyan);
+            /* Hizalama için flex yapısı */
+            display: flex; align-items: center; justify-content: center;
         }
 
         /* --- POPUPS --- */
         .match-popup {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-            background: rgba(0,0,0,0.9); border: 4px solid #4ade80; padding: 20px; border-radius: 20px;
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            background: rgba(0,0,0,0.95); border: 4px solid #4ade80; padding: 24px; border-radius: 24px;
             z-index: 100; text-align: center; pointer-events: none; opacity: 0;
+            box-shadow: 0 0 50px rgba(74, 222, 128, 0.5);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            min-width: 250px;
         }
         .match-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 
@@ -160,6 +184,7 @@
 <body class="text-white">
 
     <div class="space-bg" id="starContainer"></div>
+    <div id="damageFlash" class="damage-flash"></div>
 
     <!-- Loading -->
     <div id="loadingOverlay">
@@ -185,11 +210,17 @@
         </div>
     </div>
 
+    <!-- GENEL GERİ BİLDİRİM POPUP'I (TÜM OYUNLAR İÇİN) -->
+    <div id="globalFeedbackPopup" class="match-popup">
+        <div class="text-green-400 font-bold text-sm uppercase mb-2 tracking-widest">Harika!</div>
+        <div class="text-5xl font-bold text-white whitespace-nowrap drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" id="globalFeedbackText">3 x 5 = 15</div>
+    </div>
+
     <!-- ÖLÜM EKRANI -->
     <div id="deathOverlay" class="flex flex-col items-center justify-center text-center p-6">
         <div class="text-7xl mb-4 animate-bounce">💥</div>
         <h2 class="text-4xl font-bold text-red-500 mb-2 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]">GÖREV BAŞARISIZ!</h2>
-        <div class="text-gray-300 text-lg mb-4">Aşırı yükleme oluştu!</div>
+        <div class="text-gray-300 text-lg mb-4">Tüm can hakların tükendi!</div>
         <div class="bg-white/10 p-4 rounded-xl border border-white/20">
             <div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Doğru Cevap</div>
             <div class="text-3xl font-bold text-green-400" id="correctAnswerDisplay">?</div>
@@ -285,7 +316,11 @@
         <div id="quizGameScreen" class="hidden w-full max-w-lg flex flex-col items-center">
             <div class="w-full flex justify-between items-center mb-4 px-4 bg-black/40 p-3 rounded-2xl backdrop-blur-md border border-white/10">
                 <div class="text-left"><div class="text-[10px] text-gray-400 tracking-wider">PUAN</div><div class="text-2xl font-bold text-yellow-400" id="quizScore">0</div></div>
-                <div class="text-center w-1/3"><div class="text-[10px] text-gray-400 tracking-wider">SÜRE</div><div class="text-xl font-bold text-white" id="quizTime">10.0</div></div>
+                <!-- Can Göstergesi Quiz -->
+                <div class="hearts-container" id="quizLives">
+                    <span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span>
+                </div>
+                <div class="text-center w-1/4"><div class="text-[10px] text-gray-400 tracking-wider">SÜRE</div><div class="text-xl font-bold text-white" id="quizTime">10.0</div></div>
             </div>
             <div class="w-full bg-gradient-to-br from-blue-900 to-slate-900 border-2 border-blue-500/50 p-8 rounded-3xl text-center mb-6 shadow-2xl relative overflow-hidden">
                 <div class="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
@@ -298,8 +333,12 @@
         <!-- B. ROKET -->
         <div id="rocketOpsScreen" class="hidden w-full max-w-lg flex flex-col items-center relative h-[80vh]">
             <div class="absolute top-0 w-full flex justify-center z-30">
-                 <div class="bg-black/60 backdrop-blur-md px-6 py-2 rounded-b-xl border border-white/10 flex gap-8 shadow-xl">
+                 <div class="bg-black/60 backdrop-blur-md px-4 py-2 rounded-b-xl border border-white/10 flex gap-6 shadow-xl items-center">
                      <div class="text-center"><span class="text-[10px] text-gray-400 block">HEDEF</span><span id="opsTarget" class="text-2xl font-bold text-blue-300">? x ?</span></div>
+                     <!-- Can Göstergesi Roket -->
+                     <div class="hearts-container" id="opsLives">
+                        <span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span>
+                    </div>
                      <div class="text-center"><span class="text-[10px] text-gray-400 block">SKOR</span><span id="opsScore" class="text-2xl font-bold text-yellow-400">0</span></div>
                  </div>
             </div>
@@ -312,22 +351,35 @@
 
         <!-- C. ENERJİ -->
         <div id="energyScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
-            <div class="w-full bg-slate-900/90 p-3 rounded-t-xl flex justify-between items-center border-b border-white/10 z-20 shadow-lg">
+            <div class="w-full bg-slate-900/90 p-3 rounded-t-xl flex justify-between items-center border-b border-white/10 z-20 shadow-lg relative">
+                 <!-- YENİ ÇIKIŞ BUTONU -->
+                <button onclick="window.quitGame()" class="absolute top-3 right-3 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+
                 <div class="text-xl font-bold text-cyan-400 px-2" id="energyScore">0</div>
-                <div class="font-bold text-white bg-blue-600 px-6 py-2 rounded-lg shadow-inner text-2xl tracking-wider border border-blue-400" id="energyQuestion">? x ?</div>
-                <div class="w-8"></div>
+                <!-- Can Göstergesi Enerji -->
+                <div class="hearts-container" id="energyLives">
+                    <span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span>
+                </div>
+                <div class="font-bold text-white bg-blue-600 px-4 py-1 rounded-lg shadow-inner text-xl tracking-wider border border-blue-400 mr-8" id="energyQuestion">? x ?</div>
             </div>
-            <div id="energyGameArea"><div id="energyShip">🚀</div></div>
+            <div id="energyGameArea">
+                <!-- Şerit Çizgileri -->
+                <div class="lane-divider" style="left: 33%;"></div>
+                <div class="lane-divider" style="left: 66%;"></div>
+                <div id="energyShip">🚀</div>
+            </div>
             <div class="flex w-full gap-3 mt-3 h-24 z-20">
-                <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" ontouchstart="window.moveEnergyShip('left')" onmousedown="window.moveEnergyShip('left')">⬅️</button>
-                <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" ontouchstart="window.moveEnergyShip('right')" onmousedown="window.moveEnergyShip('right')">➡️</button>
+                <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" onpointerdown="window.moveEnergyShip('left')">⬅️</button>
+                <div class="flex flex-col justify-center items-center text-xs text-white/30">
+                    <span>Sürükle</span>
+                    <span>↔️</span>
+                </div>
+                <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" onpointerdown="window.moveEnergyShip('right')">➡️</button>
             </div>
-            <button onclick="window.quitGame()" class="mt-4 text-white/30 text-xs">Çıkış</button>
         </div>
 
         <!-- D. HAFIZA -->
         <div id="memoryGameScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
-            <div id="memPopup" class="match-popup"><div class="text-green-400 font-bold text-sm uppercase mb-1">Harika!</div><div class="text-4xl font-bold text-white whitespace-nowrap" id="memPopupText">3 x 5 = 15</div></div>
              <div class="w-full flex justify-between mb-4 px-2 bg-black/30 p-2 rounded-lg">
                 <span class="text-sm text-blue-200 font-bold">Kalan: <span id="memPairsLeft" class="text-white">?</span></span>
                 <span class="text-sm text-purple-200 font-bold">Hamle: <span id="memMoves" class="text-white">0</span></span>
@@ -371,7 +423,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- SABİT KAYIT ANAHTARLARI (ARTIK DEĞİŞMEYECEK) ---
+        // --- SABİT KAYIT ANAHTARLARI ---
         const STABLE_LOCAL_KEY = 'math_game_player_data_stable_v1';
         const STABLE_FIRESTORE_PATH = 'profile_stable_main';
 
@@ -409,25 +461,18 @@
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // --- VERİ GÖÇÜ (MIGRATION) FONKSİYONU ---
-        // Eski versiyonlardan (v21, v23) veri varsa, yeni sabit sisteme taşır.
         function migrateOldData() {
-            if (localStorage.getItem(STABLE_LOCAL_KEY)) return; // Zaten yeni sistem verisi var
-
-            // Önceki versiyon anahtarları
+            if (localStorage.getItem(STABLE_LOCAL_KEY)) return;
             const keysToCheck = ['local_player_data_v23', 'local_player_data_v21', 'local_player_data'];
-            
             for (const key of keysToCheck) {
                 const oldData = localStorage.getItem(key);
                 if (oldData) {
                     try {
                         const parsed = JSON.parse(oldData);
                         if (parsed && parsed.xp !== undefined) {
-                            console.log(`Eski veri bulundu (${key}), yeni sisteme taşınıyor...`);
                             playerData = parsed;
                             localStorage.setItem(STABLE_LOCAL_KEY, JSON.stringify(playerData));
-                            // Eski veriyi silmeyelim, güvenlik yedeği olarak kalsın
-                            break; // En güncel olanı bulduk, döngüden çık
+                            break;
                         }
                     } catch (e) { console.error("Veri taşıma hatası:", e); }
                 }
@@ -448,6 +493,7 @@
             else if (type === 'wrong') { osc.type='sawtooth'; osc.frequency.setValueAtTime(150,now); gain.gain.exponentialRampToValueAtTime(0.001,now+0.3); osc.start(now); osc.stop(now+0.3); }
             else if (type === 'laser') { osc.type='triangle'; osc.frequency.setValueAtTime(800,now); osc.frequency.exponentialRampToValueAtTime(100,now+0.2); gain.gain.setValueAtTime(0.1,now); gain.gain.linearRampToValueAtTime(0,now+0.2); osc.start(now); osc.stop(now+0.2); }
             else if (type === 'boom') { osc.type='square'; osc.frequency.setValueAtTime(100,now); gain.gain.exponentialRampToValueAtTime(0.01,now+0.4); osc.start(now); osc.stop(now+0.4); }
+            else if (type === 'hurt') { osc.type='sawtooth'; osc.frequency.setValueAtTime(100,now); osc.frequency.linearRampToValueAtTime(50,now+0.2); gain.gain.setValueAtTime(0.2,now); gain.gain.linearRampToValueAtTime(0,now+0.2); osc.start(now); osc.stop(now+0.2); }
         }
 
         function createStars() {
@@ -469,7 +515,7 @@
         async function initAuth() {
             if (isOffline) {
                 setTimeout(() => {
-                    migrateOldData(); // Çevrimdışı modda verileri taşı
+                    migrateOldData();
                     const saved = localStorage.getItem(STABLE_LOCAL_KEY);
                     if(saved) playerData = JSON.parse(saved);
                     if(playerData.avatarId === undefined) playerData.avatarId = 0;
@@ -495,17 +541,13 @@
                             if(!playerData.name) playerData.name = "Astronot";
                             if(playerData.avatarId === undefined) playerData.avatarId = 0;
                         } else { 
-                            // Firebase'de veri yoksa, local'den kurtarmayı dene veya kaydet
                             migrateOldData();
                             saveDataHybrid(); 
                         }
-                        
                         if (!document.getElementById('loadingOverlay').classList.contains('hidden')) {
                             setTimeout(finishLoading, 1000);
                         } else { updateUI(); }
-                    }, (error) => {
-                        isOffline = true; finishLoading();
-                    });
+                    }, (error) => { isOffline = true; finishLoading(); });
                 }
             });
         }
@@ -559,9 +601,7 @@
         window.updateNameLive = () => {
              const rawVal = document.getElementById('playerNameInput').value;
              const displayVal = rawVal.trim() === "" ? "Astronot" : rawVal;
-             
              playerData.name = displayVal; 
-             
              document.getElementById('displayPlayerName').textContent = displayVal;
              document.getElementById('miniNameDisplay').textContent = displayVal;
         };
@@ -571,7 +611,6 @@
              if(n) playerData.name = n;
              saveDataHybrid();
         };
-        
         window.resetAllData = resetDataHybrid;
 
         function updateUI() {
@@ -594,6 +633,7 @@
         let gameTimer = null;
         let isGameActive = false;
         let currentSessionXP = 0;
+        let currentLives = 3;
 
         const BTN_DEFAULT = "bg-white/10 border border-white/20 rounded-lg py-3 text-sm font-bold hover:bg-white/20 transition cursor-pointer";
         const BTN_SELECTED = "bg-blue-600 text-white border border-blue-400 rounded-lg py-3 text-sm font-bold shadow-lg transform scale-105 transition cursor-pointer";
@@ -603,6 +643,45 @@
             saveDataHybrid(); updateUI();
         }
 
+        // --- YENİ POPUP FONKSİYONU ---
+        function showGlobalFeedback(text) {
+            const p = document.getElementById('globalFeedbackPopup');
+            document.getElementById('globalFeedbackText').textContent = text;
+            p.classList.add('show');
+            setTimeout(() => p.classList.remove('show'), 1200);
+        }
+
+        // --- CAN SİSTEMİ FONKSİYONLARI ---
+        function updateLivesUI() {
+            const containers = document.querySelectorAll('.hearts-container');
+            containers.forEach(cont => {
+                cont.innerHTML = '';
+                for(let i=0; i<3; i++) {
+                    const h = document.createElement('span');
+                    h.className = 'heart-icon';
+                    h.textContent = '♥';
+                    if (i >= currentLives) h.classList.add('lost');
+                    cont.appendChild(h);
+                }
+            });
+        }
+
+        function takeDamage(correctAnswerText) {
+            if (!isGameActive) return;
+            currentLives--;
+            playSound('hurt');
+            updateLivesUI();
+            
+            // Ekran Kırmızı Yanıp Sönme
+            const flash = document.getElementById('damageFlash');
+            flash.classList.add('active');
+            setTimeout(() => flash.classList.remove('active'), 200);
+
+            if (currentLives <= 0) {
+                playerDeathSequence(0, correctAnswerText); // Skor önemli değil, ölüm ekranı aynı
+            }
+        }
+
         window.initGame = () => {
              createStars();
              const grid = document.getElementById('levelGrid');
@@ -610,7 +689,32 @@
                 const btn = document.createElement('button'); btn.className = BTN_DEFAULT; btn.textContent = i; btn.id = `lvl-btn-${i}`;
                 btn.onclick = () => window.toggleNumberSelection(i, btn); grid.appendChild(btn);
              }
-             window.initStudyMenu(); initAuth();
+             window.initStudyMenu(); 
+             
+             // TOUCH EVENTS İÇİN LISTENER EKLEME (ENERJİ AVI)
+             const eGameArea = document.getElementById('energyGameArea');
+             let touchStartX = 0;
+             eGameArea.addEventListener('touchstart', (e) => {
+                 touchStartX = e.touches[0].clientX;
+             }, {passive: false});
+             
+             eGameArea.addEventListener('touchmove', (e) => {
+                 if(!isGameActive || activeGameMode !== 'energy') return;
+                 e.preventDefault(); // Sayfa kaydırmayı engelle
+                 const currentX = e.touches[0].clientX;
+                 const diffX = currentX - touchStartX;
+                 
+                 // Hassasiyet eşiği 30px
+                 if(diffX > 30) {
+                     window.moveEnergyShip('right');
+                     touchStartX = currentX; // Sürekli hareket için reset
+                 } else if (diffX < -30) {
+                     window.moveEnergyShip('left');
+                     touchStartX = currentX;
+                 }
+             }, {passive: false});
+
+             initAuth();
              document.body.classList.remove('game-mode');
         };
 
@@ -656,6 +760,8 @@
             playSound('click'); hideAll();
             document.body.classList.add('game-mode');
             currentSessionXP = 0;
+            currentLives = 3; // Her oyuna 3 canla başla
+            updateLivesUI();
             if(activeGameMode === 'quiz') startQuizGame();
             else if(activeGameMode === 'memory') startMemoryGame();
             else if(activeGameMode === 'energy') startEnergyGame();
@@ -695,9 +801,12 @@
             setTimeout(() => { overlay.classList.remove('show'); endGame(currentScore); }, 2500);
         }
 
+        // --- QUIZ ---
         let qScore = 0;
         function startQuizGame() { document.getElementById('quizGameScreen').classList.remove('hidden'); qScore = 0; updateQuizScore(); nextQuizQuestion(); }
         function nextQuizQuestion() {
+            if(!isGameActive && currentLives <= 0) return;
+            isGameActive = true;
             const n1 = Math.floor(Math.random()*10)+1; const nums = Array.from(selectedNumbers); const n2 = nums[Math.floor(Math.random()*nums.length)]; const ans = n1*n2;
             document.getElementById('qNum1').textContent = n1; document.getElementById('qNum2').textContent = n2;
             let opts = new Set([ans]); while(opts.size < 4) { let f = ans + (Math.floor(Math.random()*10)-5); if(f>0 && f!==ans) opts.add(f); }
@@ -707,18 +816,34 @@
                 btn.onclick = () => {
                     clearInterval(gameTimer);
                     if(op === ans) { 
-                        playSound('correct'); btn.classList.add('bg-green-500'); 
+                        playSound('correct'); btn.classList.add('bg-green-500');
+                        showGlobalFeedback(`${n1} x ${n2} = ${ans}`); // POPUP
                         const turnScore = 100 + Math.floor(parseFloat(document.getElementById('quizTime').textContent)*10);
                         qScore += turnScore; gainXP(Math.ceil(turnScore / 5));
-                        updateQuizScore(); setTimeout(nextQuizQuestion, 500); 
-                    } else { playSound('wrong'); btn.classList.add('bg-red-500', 'shake-wrong'); setTimeout(() => endGame(qScore), 1000); }
+                        updateQuizScore(); setTimeout(nextQuizQuestion, 1000); 
+                    } else { 
+                        // YANLIŞ CEVAP - CAN SİL
+                        btn.classList.add('bg-red-500', 'shake-wrong'); 
+                        takeDamage(`${n1} x ${n2} = ${ans}`);
+                        if(currentLives > 0) setTimeout(nextQuizQuestion, 1000);
+                    }
                 }; container.appendChild(btn);
             });
             let time = 10.0; clearInterval(gameTimer); document.getElementById('quizTime').textContent = "10.0";
-            gameTimer = setInterval(() => { time -= 0.1; document.getElementById('quizTime').textContent = time.toFixed(1); if(time <= 0) { clearInterval(gameTimer); playSound('wrong'); endGame(qScore); } }, 100);
+            gameTimer = setInterval(() => { 
+                time -= 0.1; 
+                document.getElementById('quizTime').textContent = time.toFixed(1); 
+                if(time <= 0) { 
+                    clearInterval(gameTimer); 
+                    // SÜRE BİTTİ - CAN SİL
+                    takeDamage(`${n1} x ${n2} = ${ans}`);
+                    if(currentLives > 0) setTimeout(nextQuizQuestion, 1000);
+                } 
+            }, 100);
         }
         function updateQuizScore() { document.getElementById('quizScore').textContent = qScore; }
 
+        // --- ROCKET OPS ---
         let opsScore = 0; let opsTargetAns = 0;
         function startRocketOpsGame() { isGameActive = true; document.getElementById('rocketOpsScreen').classList.remove('hidden'); opsScore = 0; document.getElementById('opsScore').textContent = "0"; document.getElementById('opsPlayerRocket').style.visibility='visible'; nextOpsWave(); }
         function nextOpsWave() {
@@ -729,11 +854,11 @@
             let opts = new Set([opsTargetAns]); while(opts.size<4) { let w=opsTargetAns+(Math.floor(Math.random()*8)-4); if(w<=0||w===opsTargetAns) w+=5; opts.add(w); }
             Array.from(opts).sort(()=>Math.random()-0.5).forEach(v => {
                 const btn = document.createElement('div'); btn.className = 'asteroid-btn'; btn.textContent = v;
-                btn.onclick = (e) => shootLaserAt(btn, v); cont.appendChild(btn);
+                btn.onclick = (e) => shootLaserAt(btn, v, n1, n2); cont.appendChild(btn);
             });
             setTimeout(() => { if(isGameActive) cont.style.opacity = '1'; }, 200);
         }
-        function shootLaserAt(targetBtn, val) {
+        function shootLaserAt(targetBtn, val, n1, n2) {
             if(!isGameActive) return;
             const gameArea = document.getElementById('opsGameArea'); const rocket = document.getElementById('opsPlayerRocket'); const laser = document.createElement('div'); laser.className = 'laser-beam';
             const rRect = rocket.getBoundingClientRect(); const tRect = targetBtn.getBoundingClientRect(); const gRect = gameArea.getBoundingClientRect();
@@ -747,44 +872,103 @@
                 laser.remove();
                 if(val === opsTargetAns) { 
                     playSound('boom'); createExplosion(tRect.left + tRect.width/2, tRect.top + tRect.height/2); 
+                    showGlobalFeedback(`${n1} x ${n2} = ${opsTargetAns}`); // POPUP
                     targetBtn.style.visibility = 'hidden'; opsScore += 100; gainXP(20);
-                    document.getElementById('opsScore').textContent = opsScore; setTimeout(nextOpsWave, 500); 
-                } else { playSound('wrong'); targetBtn.classList.add('bg-red-500'); playerDeathSequence(opsScore, opsTargetAns); }
+                    document.getElementById('opsScore').textContent = opsScore; setTimeout(nextOpsWave, 800); 
+                } else { 
+                    // YANLIŞ ASTEROİD - CAN SİL
+                    targetBtn.classList.add('bg-red-500'); 
+                    takeDamage(opsTargetAns);
+                    targetBtn.style.visibility = 'hidden';
+                }
             }, 200);
         }
 
+        // --- ENERGY HUNT ---
         let energyLane = 1; const LANE_POSITIONS = [20, 50, 80]; let energyScoreVal = 0; let currentEnergyAns = 0;
-        function startEnergyGame() { isGameActive = true; document.getElementById('energyScreen').classList.remove('hidden'); energyScoreVal = 0; document.getElementById('energyScore').textContent = "0"; energyLane = 1; document.getElementById('energyShip').style.visibility='visible'; updateEnergyShipPos(); document.querySelectorAll('.energy-orb').forEach(e=>e.remove()); spawnEnergyWave(); }
+        let activeEnergyIntervals = []; // Interval takibi
+
+        function startEnergyGame() { 
+            isGameActive = true; document.getElementById('energyScreen').classList.remove('hidden'); energyScoreVal = 0; 
+            document.getElementById('energyScore').textContent = "0"; energyLane = 1; document.getElementById('energyShip').style.visibility='visible'; 
+            updateEnergyShipPos(); 
+            clearEnergyWave(); 
+            spawnEnergyWave(); 
+        }
+
         function updateEnergyShipPos() { document.getElementById('energyShip').style.left = LANE_POSITIONS[energyLane] + '%'; }
-        window.moveEnergyShip = (dir) => { if(!isGameActive) return; if(dir === 'left' && energyLane > 0) energyLane--; if(dir === 'right' && energyLane < 2) energyLane++; updateEnergyShipPos(); }
+        
+        window.moveEnergyShip = (dir) => { 
+            if(!isGameActive) return; 
+            if(dir === 'left' && energyLane > 0) energyLane--; 
+            if(dir === 'right' && energyLane < 2) energyLane++; 
+            updateEnergyShipPos(); 
+        }
+
+        function clearEnergyWave() {
+            activeEnergyIntervals.forEach(i => clearInterval(i));
+            activeEnergyIntervals = [];
+            document.querySelectorAll('.energy-orb').forEach(e => e.remove());
+        }
+
         function spawnEnergyWave() {
             if(!isGameActive || document.getElementById('energyScreen').classList.contains('hidden')) return;
+            
+            clearEnergyWave();
+
             const n2 = Array.from(selectedNumbers)[Math.floor(Math.random()*selectedNumbers.size)]; const n1 = Math.floor(Math.random()*9)+2;
             currentEnergyAns = n1*n2; document.getElementById('energyQuestion').textContent = `${n1} x ${n2}`;
             let answers = [currentEnergyAns]; while(answers.length < 3) { let f = currentEnergyAns + Math.floor(Math.random()*10)-5; if(f>0 && f!==currentEnergyAns && !answers.includes(f)) answers.push(f); }
             answers.sort(() => Math.random()-0.5);
+            
             answers.forEach((ans, i) => {
-                const m = document.createElement('div'); m.className = 'energy-orb'; m.textContent = ans; m.style.left = LANE_POSITIONS[i] + '%'; m.style.transform = 'translateX(-50%)'; m.style.top = '-60px'; document.getElementById('energyGameArea').appendChild(m);
+                const m = document.createElement('div'); m.className = 'energy-orb'; m.textContent = ans; 
+                m.style.left = LANE_POSITIONS[i] + '%'; m.style.transform = 'translateX(-50%)'; m.style.top = '-60px'; 
+                document.getElementById('energyGameArea').appendChild(m);
+                
                 let topPos = -60; const speed = 2 + (energyScoreVal/500);
+                
                 const fall = setInterval(() => {
                     if(!isGameActive || document.getElementById('energyScreen').classList.contains('hidden')) { clearInterval(fall); m.remove(); return; }
                     topPos += speed; m.style.top = topPos + 'px';
-                    if(topPos > 330 && topPos < 380) { if(energyLane === i) { 
-                        clearInterval(fall); m.remove(); 
-                        if(ans === currentEnergyAns) { 
-                            playSound('correct'); energyScoreVal += 50; gainXP(10);
-                            document.getElementById('energyScore').textContent = energyScoreVal; 
-                            document.querySelectorAll('.energy-orb').forEach(x=>x.remove()); setTimeout(spawnEnergyWave, 500); 
-                        } else { playSound('wrong'); playerDeathSequence(energyScoreVal, currentEnergyAns); } 
-                    } }
-                    if(topPos > 420) { clearInterval(fall); m.remove(); if(ans === currentEnergyAns) playerDeathSequence(energyScoreVal, currentEnergyAns); }
+                    
+                    // ÇARPIŞMA KONTROLÜ
+                    if(topPos > 330 && topPos < 380) { 
+                        if(energyLane === i) { 
+                            if(ans === currentEnergyAns) { 
+                                playSound('correct'); energyScoreVal += 50; gainXP(10);
+                                showGlobalFeedback(`${n1} x ${n2} = ${currentEnergyAns}`); // POPUP
+                                document.getElementById('energyScore').textContent = energyScoreVal; 
+                                clearEnergyWave(); // Temizle ve yeni dalga
+                                setTimeout(spawnEnergyWave, 500); 
+                            } else { 
+                                // YANLIŞ KÜREYE ÇARPTI -> HEPSİNİ SİL
+                                clearEnergyWave();
+                                takeDamage(currentEnergyAns);
+                                if(currentLives > 0) setTimeout(spawnEnergyWave, 500);
+                            } 
+                        } 
+                    }
+                    // AŞAĞI DÜŞME KONTROLÜ
+                    if(topPos > 420) { 
+                        if(ans === currentEnergyAns) {
+                            // DOĞRU CEVAP KAÇTI -> HEPSİNİ SİL
+                            clearEnergyWave();
+                            takeDamage(currentEnergyAns);
+                            if(currentLives > 0) setTimeout(spawnEnergyWave, 500);
+                        } else {
+                            clearInterval(fall); m.remove();
+                        }
+                    }
                 }, 20);
+                activeEnergyIntervals.push(fall);
             });
         }
 
+        // --- MEMORY ---
         let memoryCards = [], flippedCards = [], matchedPairs = 0, totalPairs = 6;
         function startMemoryGame() {
-            document.getElementById('memoryGameScreen').classList.remove('hidden'); document.getElementById('memPopup').classList.remove('show');
+            document.getElementById('memoryGameScreen').classList.remove('hidden');
             const grid = document.getElementById('memoryGrid'); grid.innerHTML = ''; memoryCards = []; flippedCards = []; matchedPairs = 0;
             const nums = Array.from(selectedNumbers); document.getElementById('memPairsLeft').textContent = totalPairs; document.getElementById('memMoves').textContent = 0;
             for(let i=0; i<totalPairs; i++) {
@@ -802,8 +986,8 @@
                         if(flippedCards[0].card.val === flippedCards[1].card.val) {
                             playSound('correct'); flippedCards.forEach(f => f.el.classList.add('matched')); matchedPairs++; document.getElementById('memPairsLeft').textContent = totalPairs - matchedPairs;
                             gainXP(20);
-                            const popup = document.getElementById('memPopup'); document.getElementById('memPopupText').textContent = card.full.replace('x', ' x ').replace('=', ' = '); popup.classList.add('show');
-                            setTimeout(() => { popup.classList.remove('show'); flippedCards.forEach(f => { f.el.classList.remove('matched'); f.el.classList.add('solved'); }); flippedCards = []; if(matchedPairs === totalPairs) setTimeout(() => endGame(0), 500); }, 1500);
+                            showGlobalFeedback(card.full.replace('x', ' x ').replace('=', ' = ')); // GLOBAL POPUP
+                            setTimeout(() => { flippedCards.forEach(f => { f.el.classList.remove('matched'); f.el.classList.add('solved'); }); flippedCards = []; if(matchedPairs === totalPairs) setTimeout(() => endGame(0), 500); }, 1000);
                         } else { playSound('wrong'); setTimeout(() => { flippedCards.forEach(f => f.el.classList.remove('flipped')); flippedCards = []; }, 1000); }
                     }
                 }; grid.appendChild(el);
@@ -827,4 +1011,3 @@
     </script>
 </body>
 </html>
-
