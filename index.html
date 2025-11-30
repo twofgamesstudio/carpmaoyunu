@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uzay Macerası: Matematik Üssü v20</title>
+    <title>Uzay Macerası: Matematik Üssü v22</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Türkçe karakter desteği */
@@ -14,13 +14,11 @@
             background-color: #0f172a;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            /* DEĞİŞİKLİK: Varsayılan olarak kaydırmaya izin ver (Menüler için) */
             overflow-x: hidden;
             overflow-y: auto;
             touch-action: manipulation;
         }
 
-        /* OYUN MODU: Oyun başladığında bu sınıf body'e eklenir ve kaydırmayı kilitler */
         body.game-mode {
             overflow: hidden;
             touch-action: none;
@@ -29,8 +27,7 @@
             height: 100%;
         }
 
-        /* --- Ortak Efektler --- */
-        /* DEĞİŞİKLİK: Fixed yapıldı ki scroll edilince arkaplan bitmesin */
+        /* --- Arkaplan ve Panel --- */
         .space-bg { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); position: fixed; top: 0; left: 0; height: 100vh; width: 100vw; z-index: -1; }
         .star { position: absolute; background: white; border-radius: 50%; animation: twinkle infinite alternate; }
         @keyframes twinkle { 0% { opacity: 0.3; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
@@ -39,16 +36,36 @@
             background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px);
             border: 2px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
             border-radius: 24px;
-            /* Yatay modda kenarlara yapışmaması için margin */
-            margin-top: 20px;
-            margin-bottom: 20px;
+            margin-top: 20px; margin-bottom: 20px;
         }
 
         .btn-press { transition: transform 0.1s; cursor: pointer; }
         .btn-press:active { transform: scale(0.95); }
         .hidden { display: none !important; }
 
-        /* --- PATLAMA VE EFEKTLER --- */
+        /* --- Avatar Seçici Efektleri --- */
+        .avatar-circle {
+            width: 100px; height: 100px;
+            background: radial-gradient(circle at 30% 30%, #4f46e5, #312e81);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem;
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+            border: 4px solid rgba(255,255,255,0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .avatar-circle.pulse { animation: avatarPop 0.3s; }
+        @keyframes avatarPop { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+        .arrow-btn {
+            background: rgba(255,255,255,0.1); border-radius: 50%; width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: white; cursor: pointer; transition: background 0.2s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .arrow-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
+
+        /* --- OYUN İÇİ --- */
         .explosion {
             position: absolute; pointer-events: none; width: 120px; height: 120px;
             background: radial-gradient(circle, #fcd34d 0%, #ef4444 100%);
@@ -57,11 +74,9 @@
         }
         @keyframes explode { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(3); opacity: 0; } }
 
-        /* Ekran Sallantısı */
         .shake-screen { animation: shakeAll 0.5s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shakeAll { 10%, 90% { transform: translate3d(-4px, 0, 0); } 20%, 80% { transform: translate3d(8px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-12px, 0, 0); } 40%, 60% { transform: translate3d(12px, 0, 0); } }
 
-        /* --- HAFIZA OYUNU --- */
         .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; perspective: 1000px; padding-bottom: 20px; }
         .memory-card {
             background: rgba(255,255,255,0.1); border-radius: 12px; height: 65px;
@@ -72,12 +87,10 @@
         }
         .memory-card.flipped { transform: rotateY(180deg); background: #2563eb; border-color: #60a5fa; color: white; }
         .memory-card.matched { background: #16a34a !important; border-color: #4ade80 !important; transform: rotateY(180deg); animation: pulse 0.5s; }
-        .memory-card.solved { opacity: 0.3; pointer-events: none; background: #000; border-color: #333; }
         .card-front, .card-back { position: absolute; backface-visibility: hidden; }
         .card-front { transform: rotateY(180deg); }
         .card-back { font-size: 1.8rem; color: rgba(255,255,255,0.2); }
 
-        /* --- ROKET OPERASYONU --- */
         .ops-area { position: relative; width: 100%; height: 100%; overflow: hidden; }
         .asteroid-btn {
             background: radial-gradient(circle at 30% 30%, #475569, #0f172a);
@@ -97,7 +110,6 @@
             border-radius: 4px; z-index: 15; transform-origin: bottom center; transition: height 0.2s linear;
         }
 
-        /* --- ENERJİ AVI --- */
         #energyGameArea { position: relative; width: 100%; height: 400px; overflow: hidden; background: rgba(0,0,0,0.3); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); }
         .energy-orb {
             position: absolute; width: 60px; height: 60px;
@@ -105,10 +117,8 @@
             border: 2px solid #cffafe; border-radius: 50%; color: #0c4a6e;
             display: flex; align-items: center; justify-content: center;
             font-weight: 800; font-size: 1.2rem; 
-            box-shadow: 0 0 15px #38bdf8, 0 0 30px #0284c7; 
-            z-index: 10;
+            box-shadow: 0 0 15px #38bdf8, 0 0 30px #0284c7; z-index: 10;
         }
-        .energy-orb::before { content:'⚡'; font-size: 1rem; position: absolute; top: -18px; color: #fde047; text-shadow: 0 0 5px orange; }
         
         #energyShip {
             position: absolute; bottom: 10px; left: 50%; 
@@ -118,7 +128,7 @@
             filter: drop-shadow(0 0 15px cyan);
         }
 
-        /* --- POPUP --- */
+        /* --- POPUPS --- */
         .match-popup {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
             background: rgba(0,0,0,0.9); border: 4px solid #4ade80; padding: 20px; border-radius: 20px;
@@ -127,7 +137,6 @@
         }
         .match-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 
-        /* --- FEEDBACK --- */
         #deathOverlay {
             position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
             display: flex; flex-col; align-items: center; justify-content: center; opacity: 0; pointer-events: none;
@@ -150,22 +159,30 @@
 </head>
 <body class="text-white">
 
-    <!-- Dinamik Arka Plan -->
     <div class="space-bg" id="starContainer"></div>
 
     <!-- Loading -->
     <div id="loadingOverlay">
         <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div class="text-blue-300 font-bold animate-pulse" id="loadingText">Üs ile bağlantı kuruluyor...</div>
+        <div class="text-blue-300 font-bold animate-pulse mb-8" id="loadingText">Pilot Profili Yükleniyor...</div>
+        
+        <!-- İMZA ALANI -->
+        <div class="absolute bottom-10 flex flex-col items-center opacity-70">
+            <div class="text-2xl font-bold tracking-[0.2em] text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">Twof Games</div>
+            <div class="text-sm text-white/60 font-light mt-1 tracking-wide">Erdinç Sarı</div>
+        </div>
     </div>
 
-    <!-- Marka -->
-    <div id="brandBadge" class="fixed top-4 left-4 z-50 group cursor-default">
-        <div class="flex items-center gap-2 opacity-50 group-hover:opacity-100 transition">
-            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span class="text-[10px] tracking-widest font-bold">TwoF Games v20</span>
+    <!-- Marka & Mini Profil -->
+    <div id="brandBadge" class="fixed top-4 left-4 z-50 group cursor-default flex items-center gap-3">
+        <div class="flex items-center gap-2 opacity-50 group-hover:opacity-100 transition bg-black/30 p-2 rounded-full border border-white/5 backdrop-blur-md">
+            <!-- Aktif Avatar Küçük İkon -->
+            <div id="miniAvatarDisplay" class="text-xl">👨‍🚀</div>
+            <div class="flex flex-col leading-none">
+                <span class="text-[10px] tracking-widest font-bold text-green-400">MATH BASE</span>
+                <span class="text-[9px] text-white/50" id="miniNameDisplay">Astronot</span>
+            </div>
         </div>
-        <div class="text-[9px] text-white/30 ml-4 -mt-0.5 font-light tracking-wide group-hover:text-white/60 transition">Erdinç Sarı</div>
     </div>
 
     <!-- ÖLÜM EKRANI -->
@@ -180,21 +197,25 @@
     </div>
 
     <!-- ANA KONTEYNER -->
-    <!-- min-h-screen content'i kapsasın diye -->
     <div class="relative min-h-screen flex flex-col items-center justify-center p-4 w-full">
 
-        <!-- 1. GİRİŞ EKRANI -->
+        <!-- 1. GİRİŞ EKRANI (Avatar Seçimi Burada) -->
         <div id="startScreen" class="glass-panel p-6 max-w-sm w-full text-center relative overflow-hidden slide-up hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
             
-            <div class="mb-4 relative inline-block">
-                <div class="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-800 rounded-full flex items-center justify-center text-4xl shadow-xl border-4 border-blue-400/30">👨‍🚀</div>
-                <div class="absolute -bottom-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full shadow-lg" id="rankBadge">Çaylak</div>
+            <h1 class="text-2xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300 mt-2">Karakterini Seç</h1>
+            
+            <!-- AVATAR SEÇİCİ -->
+            <div class="flex items-center justify-center gap-4 my-6">
+                <button onclick="window.changeAvatar(-1)" class="arrow-btn">❮</button>
+                <div class="relative">
+                    <div id="mainAvatarDisplay" class="avatar-circle">👨‍🚀</div>
+                    <div class="absolute -bottom-3 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg" id="rankBadge">Çaylak</div>
+                </div>
+                <button onclick="window.changeAvatar(1)" class="arrow-btn">❯</button>
             </div>
             
-            <h1 class="text-3xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Uzay Macerası</h1>
-            <p class="text-sm text-gray-400 mb-4">Matematik Galaksisi</p>
-
+            <!-- İsim ve XP -->
             <div class="bg-black/40 p-3 rounded-xl border border-white/5 mb-4 text-left">
                 <div class="flex justify-between text-xs text-gray-400 mb-1">
                     <span id="displayPlayerName" class="text-white font-bold">Astronot</span>
@@ -207,16 +228,15 @@
             
             <div class="grid gap-3">
                 <button onclick="window.savePlayerData(); window.goToGameCenter()" class="bg-gradient-to-r from-blue-600 to-purple-600 py-4 rounded-xl font-bold shadow-lg btn-press flex items-center justify-center gap-3 text-lg">
-                    🎮 OYUN MERKEZİ
+                    BAŞLA 🚀
                 </button>
                 <button onclick="window.savePlayerData(); window.goToStudyMenu()" class="bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold btn-press flex items-center justify-center gap-2 text-sm border border-white/5">
-                    📚 Çarpım Tablosu Çalış
+                    📚 Çarpım Tablosu
                 </button>
             </div>
             
-            <!-- DEĞİŞİKLİK: Verileri Sil butonu daha temiz bir konuma alındı -->
             <div class="mt-6">
-                 <button onclick="window.resetAllData()" class="text-[10px] text-gray-500 hover:text-red-400 border-b border-transparent hover:border-red-400 transition pb-0.5">Tüm Verileri Sıfırla</button>
+                 <button onclick="window.resetAllData()" class="text-[10px] text-gray-500 hover:text-red-400 border-b border-transparent hover:border-red-400 transition pb-0.5">Profili Sıfırla</button>
             </div>
         </div>
 
@@ -263,7 +283,7 @@
         <!-- 4. OYUN EKRANLARI -->
         <!-- A. QUIZ -->
         <div id="quizGameScreen" class="hidden w-full max-w-lg flex flex-col items-center">
-            <div class="w-full flex justify-between items-center mb-4 px-4 bg-black/40 p-3 rounded-2xl backdrop-blur-sm border border-white/10">
+            <div class="w-full flex justify-between items-center mb-4 px-4 bg-black/40 p-3 rounded-2xl backdrop-blur-md border border-white/10">
                 <div class="text-left"><div class="text-[10px] text-gray-400 tracking-wider">PUAN</div><div class="text-2xl font-bold text-yellow-400" id="quizScore">0</div></div>
                 <div class="text-center w-1/3"><div class="text-[10px] text-gray-400 tracking-wider">SÜRE</div><div class="text-xl font-bold text-white" id="quizTime">10.0</div></div>
             </div>
@@ -346,19 +366,32 @@
         </div>
     </div>
 
-    <!-- MAIN MODULE SCRIPT (Hybrid: Firebase + LocalStorage) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // --- AVATAR DATA ---
+        // Sadece ikonlar var, isimler kaldırıldı.
+        const AVATARS = [
+            { id: 0, icon: "👨‍🚀" },
+            { id: 1, icon: "👩‍🚀" },
+            { id: 2, icon: "🧑‍🚀" },
+            { id: 3, icon: "🤖" },
+            { id: 4, icon: "👽" },
+            { id: 5, icon: "🦸‍♂️" },
+            { id: 6, icon: "🦸‍♀️" },
+            { id: 7, icon: "🦊" },
+            { id: 8, icon: "🐼" },
+            { id: 9, icon: "🦁" }
+        ];
+
         let isOffline = false;
         let firebaseApp, firebaseAuth, firebaseDb;
         let currentUser = null;
-        let playerData = { name: "Astronot", xp: 0, rank: "Çaylak" };
+        let playerData = { name: "Astronot", xp: 0, rank: "Çaylak", avatarId: 0 };
         let unsubscribeData = null;
 
-        // INIT CHECK
         try {
             if (typeof __firebase_config === 'undefined') {
                 throw new Error("Local File Detected");
@@ -367,16 +400,13 @@
             firebaseApp = initializeApp(firebaseConfig);
             firebaseAuth = getAuth(firebaseApp);
             firebaseDb = getFirestore(firebaseApp);
-            console.log("Firebase modu başlatıldı.");
         } catch (e) {
-            console.warn("Firebase yapılandırması bulunamadı. Çevrimdışı moda geçiliyor...", e);
             isOffline = true;
-            document.getElementById('loadingText').textContent = "Çevrimdışı mod başlatılıyor...";
+            document.getElementById('loadingText').textContent = "Çevrimdışı mod...";
         }
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // HELPER FUNCTIONS
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
         
@@ -386,16 +416,15 @@
             osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
             
             if (type === 'click') { osc.frequency.setValueAtTime(600, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.1); osc.start(now); osc.stop(now+0.1); }
+            else if (type === 'pop') { osc.frequency.setValueAtTime(800,now); gain.gain.linearRampToValueAtTime(0.001,now+0.1); osc.start(now); osc.stop(now+0.1); }
             else if (type === 'correct') { osc.type='sine'; osc.frequency.setValueAtTime(400,now); osc.frequency.linearRampToValueAtTime(800,now+0.1); gain.gain.setValueAtTime(0.1,now); gain.gain.linearRampToValueAtTime(0.001,now+0.3); osc.start(now); osc.stop(now+0.3); }
             else if (type === 'wrong') { osc.type='sawtooth'; osc.frequency.setValueAtTime(150,now); gain.gain.exponentialRampToValueAtTime(0.001,now+0.3); osc.start(now); osc.stop(now+0.3); }
-            else if (type === 'pop') { osc.frequency.setValueAtTime(800,now); gain.gain.linearRampToValueAtTime(0.001,now+0.1); osc.start(now); osc.stop(now+0.1); }
             else if (type === 'laser') { osc.type='triangle'; osc.frequency.setValueAtTime(800,now); osc.frequency.exponentialRampToValueAtTime(100,now+0.2); gain.gain.setValueAtTime(0.1,now); gain.gain.linearRampToValueAtTime(0,now+0.2); osc.start(now); osc.stop(now+0.2); }
             else if (type === 'boom') { osc.type='square'; osc.frequency.setValueAtTime(100,now); gain.gain.exponentialRampToValueAtTime(0.01,now+0.4); osc.start(now); osc.stop(now+0.4); }
         }
 
         function createStars() {
-            const c = document.getElementById('starContainer');
-            c.innerHTML = '';
+            const c = document.getElementById('starContainer'); c.innerHTML = '';
             for(let i=0;i<40;i++){
                 const s = document.createElement('div'); s.className='star';
                 s.style.left=Math.random()*100+'vw'; s.style.top=Math.random()*100+'vh';
@@ -403,7 +432,6 @@
                 s.style.animationDuration=(Math.random()*3+2)+'s'; c.appendChild(s);
             }
         }
-        
         function createExplosion(x, y) {
             const exp = document.createElement('div'); exp.className = 'explosion'; 
             exp.style.left = x + 'px'; exp.style.top = y + 'px'; 
@@ -411,19 +439,17 @@
             setTimeout(() => exp.remove(), 500);
         }
 
-        // --- AUTH LOGIC (HYBRID) ---
         async function initAuth() {
             if (isOffline) {
-                // LOCAL STORAGE MODE STARTUP
                 setTimeout(() => {
-                    const saved = localStorage.getItem('local_player_data');
+                    const saved = localStorage.getItem('local_player_data_v21');
                     if(saved) playerData = JSON.parse(saved);
+                    // Eski versiyondan geçiş kontrolü
+                    if(playerData.avatarId === undefined) playerData.avatarId = 0;
                     finishLoading();
-                }, 800);
+                }, 1500); // İmzayı görmek için süreyi biraz uzattık
                 return;
             }
-
-            // FIREBASE MODE
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(firebaseAuth, __initial_auth_token);
             } else {
@@ -435,27 +461,20 @@
             onAuthStateChanged(firebaseAuth, (user) => {
                 if (user) {
                     currentUser = user;
-                    const docRef = doc(firebaseDb, 'artifacts', appId, 'users', user.uid, 'gameData', 'profile');
+                    const docRef = doc(firebaseDb, 'artifacts', appId, 'users', user.uid, 'gameData', 'profile_v21');
                     unsubscribeData = onSnapshot(docRef, (docSnap) => {
                         if (docSnap.exists()) {
                             playerData = docSnap.data();
                             if(!playerData.name) playerData.name = "Astronot";
-                            if(!playerData.xp && playerData.xp !== 0) playerData.xp = 0;
-                        } else {
-                            saveDataHybrid(); 
-                        }
+                            if(playerData.avatarId === undefined) playerData.avatarId = 0;
+                        } else { saveDataHybrid(); }
                         
-                        // DEĞİŞİKLİK: Eğer oyun zaten yüklendiyse (loading overlay gizliyse),
-                        // finishLoading() çağırıp ekranı resetleme, sadece UI güncelle.
                         if (!document.getElementById('loadingOverlay').classList.contains('hidden')) {
-                            finishLoading();
-                        } else {
-                            updateUI();
-                        }
+                            // İmzayı görmek için biraz bekle
+                            setTimeout(finishLoading, 1000);
+                        } else { updateUI(); }
                     }, (error) => {
-                        console.error("Veri okuma hatası:", error);
-                        isOffline = true;
-                        finishLoading();
+                        isOffline = true; finishLoading();
                     });
                 }
             });
@@ -465,50 +484,52 @@
             document.getElementById('loadingOverlay').style.opacity = '0';
             setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 500);
             updateUI();
-            
             const inp = document.getElementById('playerNameInput');
             if (inp.value !== playerData.name) inp.value = playerData.name === "Astronot" ? "" : playerData.name;
-            
             if(document.getElementById('startScreen').classList.contains('hidden') && 
-               document.getElementById('gameCenterScreen').classList.contains('hidden') &&
-               document.getElementById('levelSelectScreen').classList.contains('hidden')) {
+               document.getElementById('gameCenterScreen').classList.contains('hidden')) {
                 document.getElementById('startScreen').classList.remove('hidden');
             }
         }
 
-        // --- DATA SAVING (HYBRID) ---
         async function saveDataHybrid() {
             if(isOffline) {
-                localStorage.setItem('local_player_data', JSON.stringify(playerData));
+                localStorage.setItem('local_player_data_v21', JSON.stringify(playerData));
                 return;
             }
-
             if (!currentUser) return;
-            const docRef = doc(firebaseDb, 'artifacts', appId, 'users', currentUser.uid, 'gameData', 'profile');
-            try {
-                await setDoc(docRef, playerData);
-            } catch (e) {
-                console.error("Kaydetme hatası (Local'e düşülüyor):", e);
-                isOffline = true;
-                localStorage.setItem('local_player_data', JSON.stringify(playerData));
-            }
+            const docRef = doc(firebaseDb, 'artifacts', appId, 'users', currentUser.uid, 'gameData', 'profile_v21');
+            try { await setDoc(docRef, playerData); } 
+            catch (e) { isOffline = true; localStorage.setItem('local_player_data_v21', JSON.stringify(playerData)); }
         }
 
         async function resetDataHybrid() {
-            if(confirm('Tüm veriler silinecek?')) {
-                if(isOffline) {
-                    localStorage.removeItem('local_player_data');
-                } else if (currentUser) {
-                     const docRef = doc(firebaseDb, 'artifacts', appId, 'users', currentUser.uid, 'gameData', 'profile');
-                     await deleteDoc(docRef);
-                }
-                playerData = { name: "Astronot", xp: 0, rank: "Çaylak" };
-                updateUI();
-                location.reload();
+            if(confirm('Profil sıfırlansın mı?')) {
+                if(isOffline) localStorage.removeItem('local_player_data_v21');
+                else if (currentUser) await deleteDoc(doc(firebaseDb, 'artifacts', appId, 'users', currentUser.uid, 'gameData', 'profile_v21'));
+                playerData = { name: "Astronot", xp: 0, rank: "Çaylak", avatarId: 0 };
+                updateUI(); location.reload();
             }
         }
 
-        // EXPORTS TO WINDOW
+        // --- AVATAR LOGIC ---
+        window.changeAvatar = (dir) => {
+            playSound('pop');
+            let newId = playerData.avatarId + dir;
+            if(newId < 0) newId = AVATARS.length - 1;
+            if(newId >= AVATARS.length) newId = 0;
+            playerData.avatarId = newId;
+            
+            // Efekt
+            const el = document.getElementById('mainAvatarDisplay');
+            el.classList.remove('pulse');
+            void el.offsetWidth; // trigger reflow
+            el.classList.add('pulse');
+
+            updateUI();
+            saveDataHybrid();
+        }
+
         window.updateNameLive = () => {
              const val = document.getElementById('playerNameInput').value.trim();
              playerData.name = val || "Astronot"; 
@@ -523,49 +544,45 @@
         
         window.resetAllData = resetDataHybrid;
 
-        // UI UPDATE
         function updateUI() {
             document.getElementById('displayPlayerName').textContent = playerData.name;
+            document.getElementById('miniNameDisplay').textContent = playerData.name;
             document.getElementById('displayXP').textContent = playerData.xp;
+            
+            // Avatar Update
+            const av = AVATARS[playerData.avatarId] || AVATARS[0];
+            document.getElementById('mainAvatarDisplay').textContent = av.icon;
+            document.getElementById('miniAvatarDisplay').textContent = av.icon;
+            // İsim göstergesi kaldırıldı.
+
             const ranks = [{l:0,t:"Çaylak"},{l:500,t:"Pilot"},{l:1500,t:"Kaptan"},{l:3000,t:"Komutan"},{l:5000,t:"Efsane"}];
             let cr=ranks[0], nx=500; for(let r of ranks) if(playerData.xp>=r.l){cr=r; nx=ranks[ranks.indexOf(r)+1]?.l||10000;}
             document.getElementById('rankBadge').textContent = cr.t;
             document.getElementById('xpBarFill').style.width = Math.min(100, (playerData.xp/nx)*100)+'%';
         }
 
-        // --- GAME LOGIC ---
         let selectedNumbers = new Set();
         let activeGameMode = "";
         let gameTimer = null;
         let isGameActive = false;
-        // DEĞİŞİKLİK: Oturum bazlı XP takibi eklendi
         let currentSessionXP = 0;
 
         const BTN_DEFAULT = "bg-white/10 border border-white/20 rounded-lg py-3 text-sm font-bold hover:bg-white/20 transition cursor-pointer";
         const BTN_SELECTED = "bg-blue-600 text-white border border-blue-400 rounded-lg py-3 text-sm font-bold shadow-lg transform scale-105 transition cursor-pointer";
 
-        // DEĞİŞİKLİK: XP Kazanma fonksiyonu - Anlık kaydetme
         function gainXP(amount) {
-            playerData.xp += amount;
-            currentSessionXP += amount;
-            saveDataHybrid(); // Her doğru cevapta kaydet
-            updateUI();
+            playerData.xp += amount; currentSessionXP += amount;
+            saveDataHybrid(); updateUI();
         }
 
         window.initGame = () => {
              createStars();
              const grid = document.getElementById('levelGrid');
              for(let i=1; i<=10; i++){
-                const btn = document.createElement('button');
-                btn.className = BTN_DEFAULT;
-                btn.textContent = i;
-                btn.id = `lvl-btn-${i}`;
-                btn.onclick = () => window.toggleNumberSelection(i, btn);
-                grid.appendChild(btn);
+                const btn = document.createElement('button'); btn.className = BTN_DEFAULT; btn.textContent = i; btn.id = `lvl-btn-${i}`;
+                btn.onclick = () => window.toggleNumberSelection(i, btn); grid.appendChild(btn);
              }
-             window.initStudyMenu();
-             initAuth();
-             // Başlangıçta kaydırma kilidini kaldır
+             window.initStudyMenu(); initAuth();
              document.body.classList.remove('game-mode');
         };
 
@@ -586,23 +603,19 @@
             }
         }
 
-        // --- NAVIGATION ---
         function hideAll() { document.querySelectorAll('.glass-panel, [id$="Screen"]').forEach(e => e.classList.add('hidden')); document.getElementById('brandBadge').classList.add('hidden'); }
         
         window.backToMenu = () => { 
-            playSound('click'); 
-            hideAll(); 
-            updateUI();
-            document.body.classList.remove('game-mode'); // Kilit aç
+            playSound('click'); hideAll(); updateUI();
+            document.body.classList.remove('game-mode');
             document.getElementById('startScreen').classList.remove('hidden'); 
             document.getElementById('brandBadge').classList.remove('hidden'); 
         }
         window.goToGameCenter = () => { 
-            playSound('click'); 
-            hideAll(); 
-            updateUI();
-            document.body.classList.remove('game-mode'); // Kilit aç
+            playSound('click'); hideAll(); updateUI();
+            document.body.classList.remove('game-mode');
             document.getElementById('gameCenterScreen').classList.remove('hidden'); 
+            document.getElementById('brandBadge').classList.remove('hidden'); 
         }
         window.goToStudyMenu = () => { playSound('click'); hideAll(); document.getElementById('studyMenuScreen').classList.remove('hidden'); }
         
@@ -613,13 +626,9 @@
 
         window.launchSelectedGame = () => {
             playSound('click'); hideAll();
-            // DEĞİŞİKLİK: Oyun başladı, ekranı kilitle
             document.body.classList.add('game-mode');
-            // Yeni oyun için session sıfırla
             currentSessionXP = 0;
-            
-            document.getElementById('opsPlayerRocket').style.visibility = 'visible';
-            document.getElementById('energyShip').style.visibility = 'visible';
+            // Avatar Update in Game (Optional: Keeping Rocket for physics, showing avatar in HUD is already done)
             if(activeGameMode === 'quiz') startQuizGame();
             else if(activeGameMode === 'memory') startMemoryGame();
             else if(activeGameMode === 'energy') startEnergyGame();
@@ -632,17 +641,10 @@
             window.goToGameCenter(); 
         }
 
-        // --- GAME END ---
         function endGame(score) {
-            // Not: score parametresi artık kullanılmıyor, çünkü anlık XP ekleniyor.
             isGameActive = false; clearInterval(gameTimer); hideAll();
-            
-            // Son bir kez garanti olsun diye kaydet
             saveDataHybrid(); 
-            // Oyun bitti, menüye döndük, kilidi aç
             document.body.classList.remove('game-mode');
-            
-            // DEĞİŞİKLİK: Sadece bu oturumda kazanılanı göster
             document.getElementById('earnedXP').textContent = currentSessionXP; 
             document.getElementById('gameOverScreen').classList.remove('hidden');
         }
@@ -650,16 +652,13 @@
         function playerDeathSequence(currentScore, correctAnswerText) {
             if (!isGameActive) return;
             isGameActive = false; clearInterval(gameTimer);
-            
             let playerEl = null;
             if(activeGameMode === 'rocketOps') playerEl = document.getElementById('opsPlayerRocket');
             else if(activeGameMode === 'energy') playerEl = document.getElementById('energyShip');
-            
             if(playerEl) {
                 const rect = playerEl.getBoundingClientRect();
                 createExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2);
-                playSound('boom');
-                playerEl.style.visibility = 'hidden';
+                playSound('boom'); playerEl.style.visibility = 'hidden';
                 document.body.classList.add('shake-screen');
                 setTimeout(()=>document.body.classList.remove('shake-screen'), 500);
             }
@@ -669,8 +668,7 @@
             setTimeout(() => { overlay.classList.remove('show'); endGame(currentScore); }, 2500);
         }
 
-        // --- GAMES ---
-        // 1. QUIZ
+        // --- GAME MODES ---
         let qScore = 0;
         function startQuizGame() { document.getElementById('quizGameScreen').classList.remove('hidden'); qScore = 0; updateQuizScore(); nextQuizQuestion(); }
         function nextQuizQuestion() {
@@ -683,17 +681,11 @@
                 btn.onclick = () => {
                     clearInterval(gameTimer);
                     if(op === ans) { 
-                        playSound('correct'); 
-                        btn.classList.add('bg-green-500'); 
-                        // DEĞİŞİKLİK: Skor ve XP anlık hesaplanır
+                        playSound('correct'); btn.classList.add('bg-green-500'); 
                         const turnScore = 100 + Math.floor(parseFloat(document.getElementById('quizTime').textContent)*10);
-                        qScore += turnScore;
-                        gainXP(Math.ceil(turnScore / 5)); // XP kazan
-                        
-                        updateQuizScore(); 
-                        setTimeout(nextQuizQuestion, 500); 
-                    }
-                    else { playSound('wrong'); btn.classList.add('bg-red-500', 'shake-wrong'); setTimeout(() => endGame(qScore), 1000); }
+                        qScore += turnScore; gainXP(Math.ceil(turnScore / 5));
+                        updateQuizScore(); setTimeout(nextQuizQuestion, 500); 
+                    } else { playSound('wrong'); btn.classList.add('bg-red-500', 'shake-wrong'); setTimeout(() => endGame(qScore), 1000); }
                 }; container.appendChild(btn);
             });
             let time = 10.0; clearInterval(gameTimer); document.getElementById('quizTime').textContent = "10.0";
@@ -701,9 +693,8 @@
         }
         function updateQuizScore() { document.getElementById('quizScore').textContent = qScore; }
 
-        // 2. ROCKET OPS
         let opsScore = 0; let opsTargetAns = 0;
-        function startRocketOpsGame() { isGameActive = true; document.getElementById('rocketOpsScreen').classList.remove('hidden'); opsScore = 0; document.getElementById('opsScore').textContent = "0"; nextOpsWave(); }
+        function startRocketOpsGame() { isGameActive = true; document.getElementById('rocketOpsScreen').classList.remove('hidden'); opsScore = 0; document.getElementById('opsScore').textContent = "0"; document.getElementById('opsPlayerRocket').style.visibility='visible'; nextOpsWave(); }
         function nextOpsWave() {
             if(!isGameActive) return;
             const cont = document.getElementById('opsAsteroidContainer'); cont.innerHTML = ''; cont.style.opacity = '0';
@@ -729,21 +720,15 @@
             setTimeout(() => {
                 laser.remove();
                 if(val === opsTargetAns) { 
-                    playSound('boom'); 
-                    createExplosion(tRect.left + tRect.width/2, tRect.top + tRect.height/2); 
-                    targetBtn.style.visibility = 'hidden'; 
-                    opsScore += 100; 
-                    gainXP(20); // DEĞİŞİKLİK: XP anlık ekle
-                    document.getElementById('opsScore').textContent = opsScore; 
-                    setTimeout(nextOpsWave, 500); 
-                } 
-                else { playSound('wrong'); targetBtn.classList.add('bg-red-500'); playerDeathSequence(opsScore, opsTargetAns); }
+                    playSound('boom'); createExplosion(tRect.left + tRect.width/2, tRect.top + tRect.height/2); 
+                    targetBtn.style.visibility = 'hidden'; opsScore += 100; gainXP(20);
+                    document.getElementById('opsScore').textContent = opsScore; setTimeout(nextOpsWave, 500); 
+                } else { playSound('wrong'); targetBtn.classList.add('bg-red-500'); playerDeathSequence(opsScore, opsTargetAns); }
             }, 200);
         }
 
-        // 3. ENERGY (METEOR)
         let energyLane = 1; const LANE_POSITIONS = [20, 50, 80]; let energyScoreVal = 0; let currentEnergyAns = 0;
-        function startEnergyGame() { isGameActive = true; document.getElementById('energyScreen').classList.remove('hidden'); energyScoreVal = 0; document.getElementById('energyScore').textContent = "0"; energyLane = 1; updateEnergyShipPos(); document.querySelectorAll('.energy-orb').forEach(e=>e.remove()); spawnEnergyWave(); }
+        function startEnergyGame() { isGameActive = true; document.getElementById('energyScreen').classList.remove('hidden'); energyScoreVal = 0; document.getElementById('energyScore').textContent = "0"; energyLane = 1; document.getElementById('energyShip').style.visibility='visible'; updateEnergyShipPos(); document.querySelectorAll('.energy-orb').forEach(e=>e.remove()); spawnEnergyWave(); }
         function updateEnergyShipPos() { document.getElementById('energyShip').style.left = LANE_POSITIONS[energyLane] + '%'; }
         window.moveEnergyShip = (dir) => { if(!isGameActive) return; if(dir === 'left' && energyLane > 0) energyLane--; if(dir === 'right' && energyLane < 2) energyLane++; updateEnergyShipPos(); }
         function spawnEnergyWave() {
@@ -761,12 +746,9 @@
                     if(topPos > 330 && topPos < 380) { if(energyLane === i) { 
                         clearInterval(fall); m.remove(); 
                         if(ans === currentEnergyAns) { 
-                            playSound('correct'); 
-                            energyScoreVal += 50; 
-                            gainXP(10); // DEĞİŞİKLİK: XP anlık ekle
+                            playSound('correct'); energyScoreVal += 50; gainXP(10);
                             document.getElementById('energyScore').textContent = energyScoreVal; 
-                            document.querySelectorAll('.energy-orb').forEach(x=>x.remove()); 
-                            setTimeout(spawnEnergyWave, 500); 
+                            document.querySelectorAll('.energy-orb').forEach(x=>x.remove()); setTimeout(spawnEnergyWave, 500); 
                         } else { playSound('wrong'); playerDeathSequence(energyScoreVal, currentEnergyAns); } 
                     } }
                     if(topPos > 420) { clearInterval(fall); m.remove(); if(ans === currentEnergyAns) playerDeathSequence(energyScoreVal, currentEnergyAns); }
@@ -774,7 +756,6 @@
             });
         }
 
-        // 4. MEMORY
         let memoryCards = [], flippedCards = [], matchedPairs = 0, totalPairs = 6;
         function startMemoryGame() {
             document.getElementById('memoryGameScreen').classList.remove('hidden'); document.getElementById('memPopup').classList.remove('show');
@@ -794,9 +775,7 @@
                         document.getElementById('memMoves').textContent = parseInt(document.getElementById('memMoves').textContent)+1;
                         if(flippedCards[0].card.val === flippedCards[1].card.val) {
                             playSound('correct'); flippedCards.forEach(f => f.el.classList.add('matched')); matchedPairs++; document.getElementById('memPairsLeft').textContent = totalPairs - matchedPairs;
-                            
-                            gainXP(20); // DEĞİŞİKLİK: Her çift için XP anlık ekle
-
+                            gainXP(20);
                             const popup = document.getElementById('memPopup'); document.getElementById('memPopupText').textContent = card.full.replace('x', ' x ').replace('=', ' = '); popup.classList.add('show');
                             setTimeout(() => { popup.classList.remove('show'); flippedCards.forEach(f => { f.el.classList.remove('matched'); f.el.classList.add('solved'); }); flippedCards = []; if(matchedPairs === totalPairs) setTimeout(() => endGame(0), 500); }, 1500);
                         } else { playSound('wrong'); setTimeout(() => { flippedCards.forEach(f => f.el.classList.remove('flipped')); flippedCards = []; }, 1000); }
@@ -817,9 +796,9 @@
             } 
         }
 
-        // Init everything on load
         window.initGame();
 
     </script>
 </body>
 </html>
+
