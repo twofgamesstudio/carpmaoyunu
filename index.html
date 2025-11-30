@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uzay Macerası: Matematik Üssü v22</title>
+    <title>Uzay Macerası: Matematik Üssü v24</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Türkçe karakter desteği */
@@ -168,7 +168,7 @@
         
         <!-- İMZA ALANI -->
         <div class="absolute bottom-10 flex flex-col items-center opacity-70">
-            <div class="text-2xl font-bold tracking-[0.2em] text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">Twof Games</div>
+            <div class="text-2xl font-bold tracking-[0.2em] text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">TwoF Games</div>
             <div class="text-sm text-white/60 font-light mt-1 tracking-wide">Erdinç Sarı</div>
         </div>
     </div>
@@ -371,8 +371,10 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- AVATAR DATA ---
-        // Sadece ikonlar var, isimler kaldırıldı.
+        // --- SABİT KAYIT ANAHTARLARI (ARTIK DEĞİŞMEYECEK) ---
+        const STABLE_LOCAL_KEY = 'math_game_player_data_stable_v1';
+        const STABLE_FIRESTORE_PATH = 'profile_stable_main';
+
         const AVATARS = [
             { id: 0, icon: "👨‍🚀" },
             { id: 1, icon: "👩‍🚀" },
@@ -406,6 +408,31 @@
         }
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // --- VERİ GÖÇÜ (MIGRATION) FONKSİYONU ---
+        // Eski versiyonlardan (v21, v23) veri varsa, yeni sabit sisteme taşır.
+        function migrateOldData() {
+            if (localStorage.getItem(STABLE_LOCAL_KEY)) return; // Zaten yeni sistem verisi var
+
+            // Önceki versiyon anahtarları
+            const keysToCheck = ['local_player_data_v23', 'local_player_data_v21', 'local_player_data'];
+            
+            for (const key of keysToCheck) {
+                const oldData = localStorage.getItem(key);
+                if (oldData) {
+                    try {
+                        const parsed = JSON.parse(oldData);
+                        if (parsed && parsed.xp !== undefined) {
+                            console.log(`Eski veri bulundu (${key}), yeni sisteme taşınıyor...`);
+                            playerData = parsed;
+                            localStorage.setItem(STABLE_LOCAL_KEY, JSON.stringify(playerData));
+                            // Eski veriyi silmeyelim, güvenlik yedeği olarak kalsın
+                            break; // En güncel olanı bulduk, döngüden çık
+                        }
+                    } catch (e) { console.error("Veri taşıma hatası:", e); }
+                }
+            }
+        }
 
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
@@ -442,12 +469,12 @@
         async function initAuth() {
             if (isOffline) {
                 setTimeout(() => {
-                    const saved = localStorage.getItem('local_player_data_v21');
+                    migrateOldData(); // Çevrimdışı modda verileri taşı
+                    const saved = localStorage.getItem(STABLE_LOCAL_KEY);
                     if(saved) playerData = JSON.parse(saved);
-                    // Eski versiyondan geçiş kontrolü
                     if(playerData.avatarId === undefined) playerData.avatarId = 0;
                     finishLoading();
-                }, 1500); // İmzayı görmek için süreyi biraz uzattık
+                }, 1500);
                 return;
             }
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -461,16 +488,19 @@
             onAuthStateChanged(firebaseAuth, (user) => {
                 if (user) {
                     currentUser = user;
-                    const docRef = doc(firebaseDb, 'artifacts', appId, 'users', user.uid, 'gameData', 'profile_v21');
+                    const docRef = doc(firebaseDb, 'artifacts', appId, 'users', user.uid, 'gameData', STABLE_FIRESTORE_PATH);
                     unsubscribeData = onSnapshot(docRef, (docSnap) => {
                         if (docSnap.exists()) {
                             playerData = docSnap.data();
                             if(!playerData.name) playerData.name = "Astronot";
                             if(playerData.avatarId === undefined) playerData.avatarId = 0;
-                        } else { saveDataHybrid(); }
+                        } else { 
+                            // Firebase'de veri yoksa, local'den kurtarmayı dene veya kaydet
+                            migrateOldData();
+                            saveDataHybrid(); 
+                        }
                         
                         if (!document.getElementById('loadingOverlay').classList.contains('hidden')) {
-                            // İmzayı görmek için biraz bekle
                             setTimeout(finishLoading, 1000);
                         } else { updateUI(); }
                     }, (error) => {
@@ -494,46 +524,46 @@
 
         async function saveDataHybrid() {
             if(isOffline) {
-                localStorage.setItem('local_player_data_v21', JSON.stringify(playerData));
+                localStorage.setItem(STABLE_LOCAL_KEY, JSON.stringify(playerData));
                 return;
             }
             if (!currentUser) return;
-            const docRef = doc(firebaseDb, 'artifacts', appId, 'users', currentUser.uid, 'gameData', 'profile_v21');
+            const docRef = doc(firebaseDb, 'artifacts', appId, 'users', currentUser.uid, 'gameData', STABLE_FIRESTORE_PATH);
             try { await setDoc(docRef, playerData); } 
-            catch (e) { isOffline = true; localStorage.setItem('local_player_data_v21', JSON.stringify(playerData)); }
+            catch (e) { isOffline = true; localStorage.setItem(STABLE_LOCAL_KEY, JSON.stringify(playerData)); }
         }
 
         async function resetDataHybrid() {
             if(confirm('Profil sıfırlansın mı?')) {
-                if(isOffline) localStorage.removeItem('local_player_data_v21');
-                else if (currentUser) await deleteDoc(doc(firebaseDb, 'artifacts', appId, 'users', currentUser.uid, 'gameData', 'profile_v21'));
+                if(isOffline) localStorage.removeItem(STABLE_LOCAL_KEY);
+                else if (currentUser) await deleteDoc(doc(firebaseDb, 'artifacts', appId, 'users', currentUser.uid, 'gameData', STABLE_FIRESTORE_PATH));
                 playerData = { name: "Astronot", xp: 0, rank: "Çaylak", avatarId: 0 };
                 updateUI(); location.reload();
             }
         }
 
-        // --- AVATAR LOGIC ---
         window.changeAvatar = (dir) => {
             playSound('pop');
             let newId = playerData.avatarId + dir;
             if(newId < 0) newId = AVATARS.length - 1;
             if(newId >= AVATARS.length) newId = 0;
             playerData.avatarId = newId;
-            
-            // Efekt
             const el = document.getElementById('mainAvatarDisplay');
             el.classList.remove('pulse');
-            void el.offsetWidth; // trigger reflow
+            void el.offsetWidth;
             el.classList.add('pulse');
-
             updateUI();
             saveDataHybrid();
         }
 
         window.updateNameLive = () => {
-             const val = document.getElementById('playerNameInput').value.trim();
-             playerData.name = val || "Astronot"; 
-             document.getElementById('displayPlayerName').textContent = playerData.name;
+             const rawVal = document.getElementById('playerNameInput').value;
+             const displayVal = rawVal.trim() === "" ? "Astronot" : rawVal;
+             
+             playerData.name = displayVal; 
+             
+             document.getElementById('displayPlayerName').textContent = displayVal;
+             document.getElementById('miniNameDisplay').textContent = displayVal;
         };
 
         window.savePlayerData = () => {
@@ -549,11 +579,9 @@
             document.getElementById('miniNameDisplay').textContent = playerData.name;
             document.getElementById('displayXP').textContent = playerData.xp;
             
-            // Avatar Update
             const av = AVATARS[playerData.avatarId] || AVATARS[0];
             document.getElementById('mainAvatarDisplay').textContent = av.icon;
             document.getElementById('miniAvatarDisplay').textContent = av.icon;
-            // İsim göstergesi kaldırıldı.
 
             const ranks = [{l:0,t:"Çaylak"},{l:500,t:"Pilot"},{l:1500,t:"Kaptan"},{l:3000,t:"Komutan"},{l:5000,t:"Efsane"}];
             let cr=ranks[0], nx=500; for(let r of ranks) if(playerData.xp>=r.l){cr=r; nx=ranks[ranks.indexOf(r)+1]?.l||10000;}
@@ -628,7 +656,6 @@
             playSound('click'); hideAll();
             document.body.classList.add('game-mode');
             currentSessionXP = 0;
-            // Avatar Update in Game (Optional: Keeping Rocket for physics, showing avatar in HUD is already done)
             if(activeGameMode === 'quiz') startQuizGame();
             else if(activeGameMode === 'memory') startMemoryGame();
             else if(activeGameMode === 'energy') startEnergyGame();
@@ -668,7 +695,6 @@
             setTimeout(() => { overlay.classList.remove('show'); endGame(currentScore); }, 2500);
         }
 
-        // --- GAME MODES ---
         let qScore = 0;
         function startQuizGame() { document.getElementById('quizGameScreen').classList.remove('hidden'); qScore = 0; updateQuizScore(); nextQuizQuestion(); }
         function nextQuizQuestion() {
