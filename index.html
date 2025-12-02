@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uzay Macerası: Matematik Üssü v27</title>
+    <title>Uzay Macerası: Matematik Üssü v38</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Türkçe karakter desteği */
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap&subset=latin-ext');
 
         body {
@@ -27,7 +26,7 @@
             height: 100%;
         }
 
-        /* --- Arkaplan ve Panel --- */
+        /* --- Temel --- */
         .space-bg { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); position: fixed; top: 0; left: 0; height: 100vh; width: 100vw; z-index: -1; }
         .star { position: absolute; background: white; border-radius: 50%; animation: twinkle infinite alternate; }
         @keyframes twinkle { 0% { opacity: 0.3; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
@@ -43,7 +42,6 @@
         .btn-press:active { transform: scale(0.95); }
         .hidden { display: none !important; }
 
-        /* --- Avatar Seçici Efektleri --- */
         .avatar-circle {
             width: 100px; height: 100px;
             background: radial-gradient(circle at 30% 30%, #4f46e5, #312e81);
@@ -52,133 +50,119 @@
             font-size: 3.5rem;
             box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
             border: 4px solid rgba(255,255,255,0.2);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s;
+            position: relative; overflow: hidden; cursor: pointer;
         }
-        .avatar-circle.pulse { animation: avatarPop 0.3s; }
-        @keyframes avatarPop { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        .avatar-circle:hover { transform: scale(1.05); border-color: #fbbf24; }
 
-        .arrow-btn {
-            background: rgba(255,255,255,0.1); border-radius: 50%; width: 40px; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; color: white; cursor: pointer; transition: background 0.2s;
-            border: 1px solid rgba(255,255,255,0.1);
+        .team-gs { border-color: #fcd34d !important; box-shadow: 0 0 20px rgba(220, 38, 38, 0.6) !important; } 
+        .team-fb { border-color: #fbbf24 !important; box-shadow: 0 0 20px rgba(29, 78, 216, 0.6) !important; } 
+        .team-bjk { border-color: #e2e8f0 !important; box-shadow: 0 0 20px rgba(255, 255, 255, 0.4) !important; } 
+        .team-ts { border-color: #60a5fa !important; box-shadow: 0 0 20px rgba(127, 29, 29, 0.6) !important; }
+
+        /* --- LİDERLİK TABLOSU (DÜZELTİLDİ) --- */
+        .leaderboard-header {
+            display: grid;
+            grid-template-columns: 50px 1fr 80px;
+            padding: 0 15px 10px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: #94a3b8; font-size: 0.75rem; letter-spacing: 0.05em; font-weight: bold;
+            text-transform: uppercase;
         }
-        .arrow-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
-
-        /* --- CAN SİSTEMİ --- */
-        .hearts-container { display: flex; gap: 4px; justify-content: center; align-items: center; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .heart-icon { font-size: 1.5rem; color: #ef4444; transition: transform 0.2s, filter 0.2s; filter: drop-shadow(0 0 5px rgba(239,68,68,0.6)); }
-        .heart-icon.lost { color: #334155; transform: scale(0.8); filter: none; }
-
-        .damage-flash {
-            position: fixed; inset: 0; background: red; opacity: 0; pointer-events: none; z-index: 800;
-            transition: opacity 0.1s;
+        .leaderboard-row {
+            display: grid;
+            grid-template-columns: 50px 1fr 80px; /* 3 Sütun: Sıra, İsim, Puan */
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 8px; padding: 10px 15px; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
         }
-        .damage-flash.active { opacity: 0.3; }
-
-        /* --- OYUN İÇİ --- */
-        .explosion {
-            position: absolute; pointer-events: none; width: 120px; height: 120px;
-            background: radial-gradient(circle, #fcd34d 0%, #ef4444 100%);
-            border-radius: 50%; animation: explode 0.5s forwards; z-index: 60;
-            box-shadow: 0 0 20px #ef4444;
+        .leaderboard-row.player-row {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+            position: sticky; bottom: 0; z-index: 10;
         }
-        @keyframes explode { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(3); opacity: 0; } }
+        .rank-badge {
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-weight: bold; font-size: 0.9rem;
+            background: rgba(255,255,255,0.1); color: #94a3b8;
+        }
+        .rank-1 .rank-badge { background: linear-gradient(135deg, #fcd34d, #d97706); color: #451a03; }
+        .rank-2 .rank-badge { background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #1e293b; }
+        .rank-3 .rank-badge { background: linear-gradient(135deg, #fdba74, #b45309); color: #431407; }
+        .xp-change { font-size: 0.7em; margin-left: 4px; color: #4ade80; display: inline-block; }
 
-        .shake-screen { animation: shakeAll 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shakeAll { 10%, 90% { transform: translate3d(-4px, 0, 0); } 20%, 80% { transform: translate3d(8px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-12px, 0, 0); } 40%, 60% { transform: translate3d(12px, 0, 0); } }
-
-        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; perspective: 1000px; padding-bottom: 20px; }
+        /* --- HAFIZA KARTI --- */
+        .memory-grid { 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; 
+            perspective: 1000px; width: 100%; padding: 10px;
+        }
+        @media (min-width: 640px) { .memory-grid { grid-template-columns: repeat(4, 1fr); } }
+        
         .memory-card {
-            background: rgba(255,255,255,0.1); border-radius: 12px; height: 65px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; font-weight: bold; cursor: pointer;
-            transform-style: preserve-3d; transition: transform 0.4s, background-color 0.3s; position: relative;
-            border: 2px solid rgba(255,255,255,0.1);
+            background: transparent; border-radius: 16px; height: 85px;
+            cursor: pointer; position: relative; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .memory-card.flipped { transform: rotateY(180deg); background: #2563eb; border-color: #60a5fa; color: white; }
-        .memory-card.matched { background: #16a34a !important; border-color: #4ade80 !important; transform: rotateY(180deg); animation: pulse 0.5s; }
-        .card-front, .card-back { position: absolute; backface-visibility: hidden; }
-        .card-front { transform: rotateY(180deg); }
-        .card-back { font-size: 1.8rem; color: rgba(255,255,255,0.2); }
-
-        .ops-area { position: relative; width: 100%; height: 100%; overflow: hidden; }
-        .asteroid-btn {
-            background: radial-gradient(circle at 30% 30%, #475569, #0f172a);
-            border: 3px solid #94a3b8; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-            border-radius: 50%; width: 65px; height: 65px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.3rem; font-weight: bold; color: white;
-            animation: floatAsteroid 3s ease-in-out infinite; cursor: pointer; position: relative; z-index: 10;
-        }
-        @keyframes floatAsteroid { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
-        #opsPlayerRocket {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) rotate(-45deg);
-            font-size: 4rem; z-index: 20; filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.8)); transition: opacity 0.2s;
-        }
-        .laser-beam {
-            position: absolute; width: 6px; background: #fbbf24; box-shadow: 0 0 10px #f59e0b, 0 0 20px #fcd34d;
-            border-radius: 4px; z-index: 15; transform-origin: bottom center; transition: height 0.2s linear;
-        }
-
-        #energyGameArea { position: relative; width: 100%; height: 400px; overflow: hidden; background: rgba(0,0,0,0.3); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); touch-action: none; }
+        .memory-card.flipped { transform: rotateY(180deg); }
         
-        /* Şerit Çizgileri */
-        .lane-divider {
-            position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.05); z-index: 0;
-            border-left: 1px dashed rgba(255,255,255,0.1);
+        .card-front, .card-back { 
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            backface-visibility: hidden; border-radius: 16px; font-weight: 800;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.1);
+        }
+        .card-front { 
+            background: #3b82f6; color: white; transform: rotateY(180deg); font-size: 1.4rem;
+            text-shadow: 0 2px 0 rgba(0,0,0,0.2);
+        }
+        .card-back { 
+            background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3); font-size: 2rem;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px);
         }
 
-        .energy-orb {
-            position: absolute; width: 60px; height: 60px;
-            background: radial-gradient(circle at 30% 30%, #67e8f9, #0ea5e9);
-            border: 2px solid #cffafe; border-radius: 50%; color: #0c4a6e;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 800; font-size: 1.2rem; 
-            box-shadow: 0 0 15px #38bdf8, 0 0 30px #0284c7; z-index: 10;
-        }
-        
-        #energyShip {
-            position: absolute; bottom: 10px; left: 50%; 
-            /* Rotasyon ve merkezleme düzeltildi */
-            transform: translateX(-50%) rotate(-45deg);
-            transform-origin: 50% 50%;
-            width: 60px; height: 60px; font-size: 3.5rem; text-align: center; z-index: 20;
-            transition: left 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            filter: drop-shadow(0 0 15px cyan);
-            /* Hizalama için flex yapısı */
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        /* --- POPUPS --- */
-        .match-popup {
-            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0);
-            background: rgba(0,0,0,0.95); border: 4px solid #4ade80; padding: 24px; border-radius: 24px;
-            z-index: 100; text-align: center; pointer-events: none; opacity: 0;
-            box-shadow: 0 0 50px rgba(74, 222, 128, 0.5);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            min-width: 250px;
-        }
-        .match-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-
-        #deathOverlay {
-            position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
-            display: flex; flex-col; align-items: center; justify-content: center; opacity: 0; pointer-events: none;
-            transition: opacity 0.3s;
-        }
-        #deathOverlay.show { opacity: 1; pointer-events: auto; }
-
-        #loadingOverlay {
-            position: fixed; inset: 0; z-index: 1000; background: #0f172a;
-            display: flex; flex-col; align-items: center; justify-content: center;
-            transition: opacity 0.5s;
-        }
-        
-        .slide-up { animation: slideUp 0.5s ease-out forwards; }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        /* --- Diğer Stiller --- */
+        .hearts-container { display: flex; gap: 4px; justify-content: center; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 12px; }
+        .heart-icon { font-size: 1.5rem; color: #ef4444; }
+        .heart-icon.lost { color: #334155; }
+        .damage-flash { position: fixed; inset: 0; background: red; opacity: 0; pointer-events: none; z-index: 800; transition: opacity 0.1s; }
+        .damage-flash.active { opacity: 0.3; }
+        .explosion { position: absolute; pointer-events: none; width: 120px; height: 120px; background: radial-gradient(circle, #fcd34d 0%, #ef4444 100%); border-radius: 50%; animation: explode 0.5s forwards; z-index: 60; }
+        @keyframes explode { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(3); opacity: 0; } }
         .shake-wrong { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
+        
+        /* Yarış Modu */
+        .race-track-container { width: 100%; background: rgba(0,0,0,0.4); border-radius: 16px; padding: 10px; position: relative; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .race-lane { position: relative; height: 60px; border-bottom: 2px dashed rgba(255,255,255,0.1); margin-bottom: 10px; }
+        .race-lane:last-child { border-bottom: none; margin-bottom: 0; }
+        .finish-line { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; background-image: linear-gradient(45deg, #fff 25%, #000 25%, #000 50%, #fff 50%, #fff 75%, #000 75%, #000 100%); background-size: 10px 10px; z-index: 5; }
+        .runner { position: absolute; left: 0; bottom: 5px; font-size: 2.5rem; transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+        .runner-label { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; background: rgba(0,0,0,0.6); padding: 1px 4px; border-radius: 4px; white-space: nowrap; color: #cbd5e1; }
 
+        .match-popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); background: rgba(0,0,0,0.9); border: 4px solid #4ade80; padding: 20px; border-radius: 20px; z-index: 100; text-align: center; pointer-events: none; opacity: 0; transition: all 0.3s; }
+        .match-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        #deathOverlay { position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); display: flex; flex-col; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        #deathOverlay.show { opacity: 1; pointer-events: auto; }
+        #loadingOverlay { position: fixed; inset: 0; z-index: 1000; background: #0f172a; display: flex; flex-col; align-items: center; justify-content: center; transition: opacity 0.5s; }
+        #avatarGridContainer::-webkit-scrollbar { width: 4px; }
+        #avatarGridContainer::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
+        .avatar-option-btn:hover { transform: scale(1.1); box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        
+        #visualContainer::-webkit-scrollbar { width: 4px; }
+        #visualContainer::-webkit-scrollbar-thumb { background: #9333ea; border-radius: 4px; }
+        .study-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); padding: 12px 20px; margin-bottom: 8px; border-radius: 12px; font-size: 1.2rem; border: 1px solid rgba(255,255,255,0.05); }
+        .study-row span:last-child { color: #facc15; font-weight: bold; font-size: 1.4rem; }
+
+        .ops-area { position: relative; width: 100%; height: 100%; overflow: hidden; }
+        .asteroid-btn { background: radial-gradient(circle at 30% 30%, #475569, #0f172a); border: 3px solid #94a3b8; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border-radius: 50%; width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: bold; color: white; animation: floatAsteroid 3s ease-in-out infinite; cursor: pointer; position: relative; z-index: 10; }
+        @keyframes floatAsteroid { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        #opsPlayerRocket { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) rotate(-45deg); font-size: 4rem; z-index: 20; filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.8)); transition: opacity 0.2s; }
+        .laser-beam { position: absolute; width: 6px; background: #fbbf24; box-shadow: 0 0 10px #f59e0b, 0 0 20px #fcd34d; border-radius: 4px; z-index: 15; transform-origin: bottom center; transition: height 0.2s linear; }
+        #energyGameArea { position: relative; width: 100%; height: 400px; overflow: hidden; background: rgba(0,0,0,0.3); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); touch-action: none; }
+        .energy-orb { position: absolute; width: 60px; height: 60px; background: radial-gradient(circle at 30% 30%, #67e8f9, #0ea5e9); border: 2px solid #cffafe; border-radius: 50%; color: #0c4a6e; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; box-shadow: 0 0 15px #38bdf8, 0 0 30px #0284c7; z-index: 10; }
+        #energyShip { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%) rotate(-45deg); width: 60px; height: 60px; font-size: 3.5rem; text-align: center; z-index: 20; transition: left 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); filter: drop-shadow(0 0 15px cyan); }
     </style>
 </head>
 <body class="text-white">
@@ -186,22 +170,17 @@
     <div class="space-bg" id="starContainer"></div>
     <div id="damageFlash" class="damage-flash"></div>
 
-    <!-- Loading -->
     <div id="loadingOverlay">
         <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <div class="text-blue-300 font-bold animate-pulse mb-8" id="loadingText">Pilot Profili Yükleniyor...</div>
-        
-        <!-- İMZA ALANI -->
         <div class="absolute bottom-10 flex flex-col items-center opacity-70">
             <div class="text-2xl font-bold tracking-[0.2em] text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">TwoF Games</div>
             <div class="text-sm text-white/60 font-light mt-1 tracking-wide">Erdinç Sarı</div>
         </div>
     </div>
 
-    <!-- Marka & Mini Profil -->
     <div id="brandBadge" class="fixed top-4 left-4 z-50 group cursor-default flex items-center gap-3">
         <div class="flex items-center gap-2 opacity-50 group-hover:opacity-100 transition bg-black/30 p-2 rounded-full border border-white/5 backdrop-blur-md">
-            <!-- Aktif Avatar Küçük İkon -->
             <div id="miniAvatarDisplay" class="text-xl">👨‍🚀</div>
             <div class="flex flex-col leading-none">
                 <span class="text-[10px] tracking-widest font-bold text-green-400">MATH BASE</span>
@@ -210,43 +189,43 @@
         </div>
     </div>
 
-    <!-- GENEL GERİ BİLDİRİM POPUP'I (TÜM OYUNLAR İÇİN) -->
-    <div id="globalFeedbackPopup" class="match-popup">
-        <div class="text-green-400 font-bold text-sm uppercase mb-2 tracking-widest">Harika!</div>
-        <div class="text-5xl font-bold text-white whitespace-nowrap drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" id="globalFeedbackText">3 x 5 = 15</div>
-    </div>
-
-    <!-- ÖLÜM EKRANI -->
     <div id="deathOverlay" class="flex flex-col items-center justify-center text-center p-6">
         <div class="text-7xl mb-4 animate-bounce">💥</div>
-        <h2 class="text-4xl font-bold text-red-500 mb-2 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]">GÖREV BAŞARISIZ!</h2>
-        <div class="text-gray-300 text-lg mb-4">Tüm can hakların tükendi!</div>
+        <h2 class="text-4xl font-bold text-red-500 mb-2 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" id="deathTitle">GÖREV BAŞARISIZ!</h2>
+        <div class="text-gray-300 text-lg mb-4" id="deathMessage">Tüm can hakların tükendi!</div>
         <div class="bg-white/10 p-4 rounded-xl border border-white/20">
             <div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Doğru Cevap</div>
             <div class="text-3xl font-bold text-green-400" id="correctAnswerDisplay">?</div>
         </div>
     </div>
 
-    <!-- ANA KONTEYNER -->
+    <div id="avatarModal" class="hidden fixed inset-0 z-[2000] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
+        <div class="glass-panel p-6 max-w-2xl w-full max-h-[85vh] flex flex-col relative animate-fade-in-up">
+            <button onclick="document.getElementById('avatarModal').classList.add('hidden')" class="absolute top-4 right-4 text-white/50 hover:text-white p-2 text-xl bg-white/5 rounded-full w-10 h-10 flex items-center justify-center transition hover:bg-red-500/20">✕</button>
+            <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300 mb-6 text-center">Pilotunu Seç</h2>
+            <div id="avatarGridContainer" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4 overflow-y-auto p-4 content-start"></div>
+            <div class="text-center text-xs text-gray-500 mt-4">Seçmek için karaktere tıkla</div>
+        </div>
+    </div>
+
     <div class="relative min-h-screen flex flex-col items-center justify-center p-4 w-full">
 
-        <!-- 1. GİRİŞ EKRANI (Avatar Seçimi Burada) -->
         <div id="startScreen" class="glass-panel p-6 max-w-sm w-full text-center relative overflow-hidden slide-up hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
-            
-            <h1 class="text-2xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300 mt-2">Karakterini Seç</h1>
-            
-            <!-- AVATAR SEÇİCİ -->
-            <div class="flex items-center justify-center gap-4 my-6">
-                <button onclick="window.changeAvatar(-1)" class="arrow-btn">❮</button>
-                <div class="relative">
+            <div class="mb-5 mt-2 border-b border-white/10 pb-4">
+                <h2 class="text-lg font-bold text-yellow-400 leading-tight drop-shadow-md tracking-wide">Muradiye Atatürk<br>Ayser-Kani Çelikel İlkokulu</h2>
+            </div>
+            <h1 class="text-sm font-bold mb-1 text-blue-200 uppercase tracking-widest">Karakterini Seç</h1>
+            <div class="flex flex-col items-center justify-center gap-2 my-4">
+                <div class="relative group cursor-pointer" onclick="window.openAvatarModal()">
                     <div id="mainAvatarDisplay" class="avatar-circle">👨‍🚀</div>
                     <div class="absolute -bottom-3 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg" id="rankBadge">Çaylak</div>
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition backdrop-blur-[1px]">
+                        <span class="text-2xl filter drop-shadow-lg">✏️</span>
+                    </div>
                 </div>
-                <button onclick="window.changeAvatar(1)" class="arrow-btn">❯</button>
+                <button onclick="window.openAvatarModal()" class="text-xs text-blue-300 hover:text-white underline mt-2 bg-white/5 px-3 py-1 rounded-full transition">Değiştir</button>
             </div>
-            
-            <!-- İsim ve XP -->
             <div class="bg-black/40 p-3 rounded-xl border border-white/5 mb-4 text-left">
                 <div class="flex justify-between text-xs text-gray-400 mb-1">
                     <span id="displayPlayerName" class="text-white font-bold">Astronot</span>
@@ -254,31 +233,24 @@
                 </div>
                 <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden"><div id="xpBarFill" class="h-full bg-yellow-500 w-0 transition-all duration-1000"></div></div>
             </div>
-
             <input type="text" id="playerNameInput" oninput="window.updateNameLive()" onblur="window.savePlayerData()" placeholder="Pilot Adı..." class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-white mb-4 focus:outline-none focus:border-blue-500 focus:bg-white/10 transition">
-            
             <div class="grid gap-3">
-                <button onclick="window.savePlayerData(); window.goToGameCenter()" class="bg-gradient-to-r from-blue-600 to-purple-600 py-4 rounded-xl font-bold shadow-lg btn-press flex items-center justify-center gap-3 text-lg">
-                    BAŞLA 🚀
-                </button>
-                <button onclick="window.savePlayerData(); window.goToStudyMenu()" class="bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold btn-press flex items-center justify-center gap-2 text-sm border border-white/5">
-                    📚 Çarpım Tablosu
-                </button>
+                <button onclick="window.savePlayerData(); window.goToGameCenter()" class="bg-gradient-to-r from-blue-600 to-purple-600 py-4 rounded-xl font-bold shadow-lg btn-press flex items-center justify-center gap-3 text-lg">BAŞLA 🚀</button>
+                <button onclick="window.savePlayerData(); window.goToStudyMenu()" class="bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold btn-press flex items-center justify-center gap-2 text-sm border border-white/5">📚 Çarpım Tablosu</button>
             </div>
-            
-            <div class="mt-6">
-                 <button onclick="window.resetAllData()" class="text-[10px] text-gray-500 hover:text-red-400 border-b border-transparent hover:border-red-400 transition pb-0.5">Profili Sıfırla</button>
-            </div>
+            <div class="mt-6"><button onclick="window.resetAllData()" class="text-[10px] text-gray-500 hover:text-red-400 border-b border-transparent hover:border-red-400 transition pb-0.5">Profili Sıfırla</button></div>
         </div>
 
-        <!-- 2. OYUN MERKEZİ -->
         <div id="gameCenterScreen" class="hidden glass-panel p-6 max-w-md w-full text-center slide-up relative">
             <button onclick="window.backToMenu()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition z-10">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-
             <h2 class="text-2xl font-bold mb-4 text-blue-300 mt-2">Görev Seçimi</h2>
             <div class="grid grid-cols-1 gap-3">
+                <button onclick="window.prepareGame('racePre')" class="bg-gradient-to-r from-indigo-600 to-purple-700 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex items-center gap-4 group border border-indigo-500/30">
+                    <div class="text-3xl bg-black/20 p-2 rounded-xl">👽</div>
+                    <div><div class="font-bold text-base">Uzaylı Yarışı</div><div class="text-[10px] text-indigo-200">Hızlı çöz, uzaylıyı geç!</div></div>
+                </button>
                 <button onclick="window.prepareGame('quiz')" class="bg-gradient-to-r from-green-600 to-emerald-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex items-center gap-4 group border border-green-500/30">
                     <div class="text-3xl bg-black/20 p-2 rounded-xl">⏱️</div>
                     <div><div class="font-bold text-base">Hızlı Test</div><div class="text-[10px] text-green-200">Zamana karşı soruları çöz!</div></div>
@@ -296,12 +268,40 @@
                     <div><div class="font-bold text-base">Hafıza Kartları</div><div class="text-[10px] text-purple-200">Kartları eşleştir.</div></div>
                 </button>
             </div>
+            <button onclick="window.openLeaderboard()" class="w-full mt-4 bg-white/5 hover:bg-white/10 border border-yellow-500/30 p-3 rounded-2xl flex items-center justify-center gap-3 transition">
+                <span class="text-xl">🏆</span>
+                <span class="text-yellow-200 font-bold">Liderlik Tablosu</span>
+            </button>
         </div>
 
-        <!-- 3. SEVİYE SEÇİMİ -->
+        <div id="leaderboardScreen" class="hidden glass-panel p-6 max-w-md w-full slide-up relative h-[70vh] flex flex-col">
+            <button onclick="window.goToGameCenter()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <h2 class="text-xl font-bold mb-4 text-yellow-400 mt-2 text-center">Haftanın Pilotları</h2>
+            <div class="leaderboard-header"><span>Sıra</span><span>Pilot</span><span class="text-right">TP</span></div>
+            <div id="leaderboardList" class="flex-1 overflow-y-auto pr-1"></div>
+            <div class="text-center text-[10px] text-gray-500 mt-2">* Sıralama anlık olarak güncellenir.</div>
+        </div>
+
+        <div id="raceDifficultyScreen" class="hidden glass-panel p-6 max-w-md w-full text-center slide-up relative">
+            <button onclick="window.goToGameCenter()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            <h2 class="text-2xl font-bold mb-6 text-indigo-300">Zorluk Seviyesi</h2>
+            <div class="grid gap-4">
+                <button onclick="window.startRaceGame('easy')" class="bg-green-600/30 hover:bg-green-600/50 border border-green-500/50 p-4 rounded-xl flex items-center justify-between group transition">
+                    <div class="text-left"><div class="font-bold text-green-300 text-lg group-hover:text-green-200">Kolay</div><div class="text-xs text-green-200/60">Yavaş Uzaylı</div></div><div class="text-2xl font-bold text-green-400">+30 XP</div>
+                </button>
+                <button onclick="window.startRaceGame('medium')" class="bg-yellow-600/30 hover:bg-yellow-600/50 border border-yellow-500/50 p-4 rounded-xl flex items-center justify-between group transition">
+                    <div class="text-left"><div class="font-bold text-yellow-300 text-lg group-hover:text-yellow-200">Orta</div><div class="text-xs text-yellow-200/60">Normal Uzaylı</div></div><div class="text-2xl font-bold text-yellow-400">+60 XP</div>
+                </button>
+                <button onclick="window.startRaceGame('hard')" class="bg-red-600/30 hover:bg-red-600/50 border border-red-500/50 p-4 rounded-xl flex items-center justify-between group transition">
+                    <div class="text-left"><div class="font-bold text-red-300 text-lg group-hover:text-red-200">Zor</div><div class="text-xs text-red-200/60">Hızlı Uzaylı</div></div><div class="text-2xl font-bold text-red-400">+120 XP</div>
+                </button>
+            </div>
+        </div>
+
         <div id="levelSelectScreen" class="hidden glass-panel p-6 max-w-md w-full text-center slide-up relative">
             <button onclick="window.goToGameCenter()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
-
             <h2 class="text-xl font-bold mb-2 text-white mt-2">Hangi Sayılarla Oynayalım?</h2>
             <div class="grid grid-cols-5 gap-3 mb-6" id="levelGrid"></div>
             <div class="flex gap-3 mb-6">
@@ -311,15 +311,28 @@
             <button onclick="window.launchSelectedGame()" id="launchBtn" disabled class="w-full bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg btn-press text-lg">BAŞLAT 🚀</button>
         </div>
 
-        <!-- 4. OYUN EKRANLARI -->
-        <!-- A. QUIZ -->
+        <div id="raceGameScreen" class="hidden w-full max-w-lg flex flex-col items-center">
+            <div class="w-full bg-black/40 p-3 rounded-2xl backdrop-blur-md border border-white/10 mb-4">
+                <div class="flex justify-between items-end mb-2 px-2">
+                    <div class="text-yellow-400 font-bold tracking-widest text-sm">YARIŞ PİSTİ</div>
+                    <div class="text-[10px] text-gray-400 uppercase tracking-widest" id="raceDiffBadge">Zorluk: KOLAY</div>
+                </div>
+                <div class="race-track-container">
+                    <div class="race-lane"><div class="finish-line"></div><div id="playerRunner" class="runner"><span id="playerRunnerIcon">👨‍🚀</span><div class="runner-label" id="playerRunnerName">Sen</div></div></div>
+                    <div class="race-lane"><div class="finish-line"></div><div id="botRunner" class="runner"><span id="botRunnerIcon">👽</span><div class="runner-label text-red-300" id="botRunnerName">Uzaylı</div></div></div>
+                </div>
+            </div>
+            <div class="w-full bg-gradient-to-br from-indigo-900 to-slate-900 border-2 border-indigo-500/50 p-6 rounded-3xl text-center mb-6 shadow-2xl relative overflow-hidden">
+                <div class="text-6xl font-bold text-white tracking-wider drop-shadow-lg"><span id="rNum1">?</span> × <span id="rNum2">?</span> = <span class="text-yellow-400">?</span></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 w-full" id="raceOptions"></div>
+            <button onclick="window.quitGame()" class="mt-8 text-white/30 text-xs hover:text-white">Pes Et</button>
+        </div>
+
         <div id="quizGameScreen" class="hidden w-full max-w-lg flex flex-col items-center">
             <div class="w-full flex justify-between items-center mb-4 px-4 bg-black/40 p-3 rounded-2xl backdrop-blur-md border border-white/10">
                 <div class="text-left"><div class="text-[10px] text-gray-400 tracking-wider">PUAN</div><div class="text-2xl font-bold text-yellow-400" id="quizScore">0</div></div>
-                <!-- Can Göstergesi Quiz -->
-                <div class="hearts-container" id="quizLives">
-                    <span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span>
-                </div>
+                <div class="hearts-container" id="quizLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
                 <div class="text-center w-1/4"><div class="text-[10px] text-gray-400 tracking-wider">SÜRE</div><div class="text-xl font-bold text-white" id="quizTime">10.0</div></div>
             </div>
             <div class="w-full bg-gradient-to-br from-blue-900 to-slate-900 border-2 border-blue-500/50 p-8 rounded-3xl text-center mb-6 shadow-2xl relative overflow-hidden">
@@ -330,15 +343,11 @@
             <button onclick="window.quitGame()" class="mt-8 text-white/30 text-xs hover:text-white">Çıkış Yap</button>
         </div>
 
-        <!-- B. ROKET -->
         <div id="rocketOpsScreen" class="hidden w-full max-w-lg flex flex-col items-center relative h-[80vh]">
             <div class="absolute top-0 w-full flex justify-center z-30">
                  <div class="bg-black/60 backdrop-blur-md px-4 py-2 rounded-b-xl border border-white/10 flex gap-6 shadow-xl items-center">
                      <div class="text-center"><span class="text-[10px] text-gray-400 block">HEDEF</span><span id="opsTarget" class="text-2xl font-bold text-blue-300">? x ?</span></div>
-                     <!-- Can Göstergesi Roket -->
-                     <div class="hearts-container" id="opsLives">
-                        <span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span>
-                    </div>
+                     <div class="hearts-container" id="opsLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
                      <div class="text-center"><span class="text-[10px] text-gray-400 block">SKOR</span><span id="opsScore" class="text-2xl font-bold text-yellow-400">0</span></div>
                  </div>
             </div>
@@ -349,37 +358,23 @@
             <button onclick="window.quitGame()" class="absolute bottom-0 text-white/30 text-xs z-30">Çıkış</button>
         </div>
 
-        <!-- C. ENERJİ -->
         <div id="energyScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
-            <div class="w-full bg-slate-900/90 p-3 rounded-t-xl flex justify-between items-center border-b border-white/10 z-20 shadow-lg relative">
-                 <!-- YENİ ÇIKIŞ BUTONU -->
-                <button onclick="window.quitGame()" class="absolute top-3 right-3 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
-
+            <div class="w-full bg-slate-900/90 p-3 rounded-t-xl flex justify-between items-center border-b border-white/10 z-20 shadow-lg">
                 <div class="text-xl font-bold text-cyan-400 px-2" id="energyScore">0</div>
-                <!-- Can Göstergesi Enerji -->
-                <div class="hearts-container" id="energyLives">
-                    <span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span>
-                </div>
-                <div class="font-bold text-white bg-blue-600 px-4 py-1 rounded-lg shadow-inner text-xl tracking-wider border border-blue-400 mr-8" id="energyQuestion">? x ?</div>
+                <div class="hearts-container" id="energyLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
+                <div class="font-bold text-white bg-blue-600 px-4 py-1 rounded-lg shadow-inner text-xl tracking-wider border border-blue-400" id="energyQuestion">? x ?</div>
             </div>
-            <div id="energyGameArea">
-                <!-- Şerit Çizgileri -->
-                <div class="lane-divider" style="left: 33%;"></div>
-                <div class="lane-divider" style="left: 66%;"></div>
-                <div id="energyShip">🚀</div>
-            </div>
+            <div id="energyGameArea"><div id="energyShip">🚀</div></div>
             <div class="flex w-full gap-3 mt-3 h-24 z-20">
                 <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" onpointerdown="window.moveEnergyShip('left')">⬅️</button>
-                <div class="flex flex-col justify-center items-center text-xs text-white/30">
-                    <span>Sürükle</span>
-                    <span>↔️</span>
-                </div>
+                <div class="flex flex-col justify-center items-center text-xs text-white/30"><span>Sürükle</span><span>↔️</span></div>
                 <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" onpointerdown="window.moveEnergyShip('right')">➡️</button>
             </div>
+            <button onclick="window.quitGame()" class="mt-4 text-white/30 text-xs">Çıkış</button>
         </div>
 
-        <!-- D. HAFIZA -->
         <div id="memoryGameScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
+            <div id="memPopup" class="match-popup"><div class="text-green-400 font-bold text-sm uppercase mb-1">Harika!</div><div class="text-4xl font-bold text-white whitespace-nowrap" id="memPopupText">3 x 5 = 15</div></div>
              <div class="w-full flex justify-between mb-4 px-2 bg-black/30 p-2 rounded-lg">
                 <span class="text-sm text-blue-200 font-bold">Kalan: <span id="memPairsLeft" class="text-white">?</span></span>
                 <span class="text-sm text-purple-200 font-bold">Hamle: <span id="memMoves" class="text-white">0</span></span>
@@ -388,10 +383,9 @@
             <button onclick="window.quitGame()" class="mt-8 text-white/30 text-xs">Çıkış</button>
         </div>
 
-        <!-- 5. OYUN SONU -->
         <div id="gameOverScreen" class="hidden absolute inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-6 backdrop-blur-md fixed h-full w-full">
-            <div class="text-8xl mb-6 animate-bounce">🏆</div>
-            <h2 class="text-4xl font-bold text-white mb-2">Oyun Bitti!</h2>
+            <div class="text-8xl mb-6 animate-bounce" id="gameOverIcon">🏆</div>
+            <h2 class="text-4xl font-bold text-white mb-2" id="gameOverTitle">Oyun Bitti!</h2>
             <div class="text-center mb-8 bg-white/10 p-6 rounded-3xl w-full max-w-xs border border-white/10">
                 <div class="text-gray-400 text-sm uppercase tracking-widest mb-2">Bu Oturumda Kazanılan XP</div>
                 <div class="text-6xl font-bold text-green-400 drop-shadow-lg">+<span id="earnedXP">0</span></div>
@@ -402,19 +396,19 @@
             </div>
         </div>
 
-        <!-- 6. ANTRENMAN -->
-        <div id="studyMenuScreen" class="hidden glass-panel p-6 max-w-md w-full text-center slide-up relative">
+        <div id="studyMenuScreen" class="hidden glass-panel p-6 max-w-2xl w-full text-center slide-up relative h-[70vh] flex flex-col">
             <button onclick="window.backToMenu()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
             <h2 class="text-xl font-bold mb-4 text-purple-300 mt-2">Çarpım Tablosu</h2>
-            <div class="grid grid-cols-2 gap-3" id="studyButtonsGrid"></div>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 overflow-y-auto pr-1 pb-4 content-start" id="studyButtonsGrid"></div>
         </div>
-        <div id="studyDetailScreen" class="hidden glass-panel p-4 max-w-lg w-full h-[80vh] flex flex-col slide-up">
-            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-                <button onclick="window.goToStudyMenu()" class="text-xl">←</button>
-                <h2 class="text-xl font-bold text-purple-400"><span id="studyTitle">3</span> ile Çarpma</h2>
+        
+        <div id="studyDetailScreen" class="hidden glass-panel p-6 max-w-md w-full h-[85vh] flex flex-col slide-up">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                <button onclick="window.goToStudyMenu()" class="text-xl bg-white/5 p-2 rounded-full hover:bg-white/20 transition">←</button>
+                <h2 class="text-2xl font-bold text-white"><span id="studyTitle">3</span>'ler</h2>
                 <div class="w-8"></div>
             </div>
-            <div id="visualContainer" class="flex-1 overflow-y-auto flex flex-wrap content-start justify-center gap-2"></div>
+            <div id="visualContainer" class="flex-1 overflow-y-auto pr-1"></div>
         </div>
     </div>
 
@@ -423,21 +417,32 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- SABİT KAYIT ANAHTARLARI ---
         const STABLE_LOCAL_KEY = 'math_game_player_data_stable_v1';
+        const STABLE_LOCAL_KEY_BOTS = 'math_game_bots_data_stable_v1';
         const STABLE_FIRESTORE_PATH = 'profile_stable_main';
 
         const AVATARS = [
-            { id: 0, icon: "👨‍🚀" },
-            { id: 1, icon: "👩‍🚀" },
-            { id: 2, icon: "🧑‍🚀" },
-            { id: 3, icon: "🤖" },
-            { id: 4, icon: "👽" },
-            { id: 5, icon: "🦸‍♂️" },
-            { id: 6, icon: "🦸‍♀️" },
-            { id: 7, icon: "🦊" },
-            { id: 8, icon: "🐼" },
-            { id: 9, icon: "🦁" }
+            { id: 0, icon: "👨‍🚀", class: "" }, { id: 1, icon: "👩‍🚀", class: "" }, { id: 2, icon: "🧑‍🚀", class: "" },
+            { id: 3, icon: "🤖", class: "" }, { id: 4, icon: "👽", class: "" }, { id: 5, icon: "🦸‍♂️", class: "" },
+            { id: 6, icon: "🦸‍♀️", class: "" }, { id: 7, icon: "🦊", class: "" }, { id: 8, icon: "🐼", class: "" },
+            { id: 9, icon: "🦁", class: "" }, { id: 10, icon: "🦁", class: "team-gs" }, { id: 11, icon: "🦅", class: "team-bjk" },
+            { id: 12, icon: "🐤", class: "team-fb" }, { id: 13, icon: "⚓", class: "team-ts" }, { id: 14, icon: "🐯", class: "" },
+            { id: 15, icon: "🦄", class: "" }, { id: 16, icon: "🐲", class: "" }, { id: 17, icon: "👾", class: "" },
+            { id: 18, icon: "👮", class: "" }, { id: 19, icon: "👩‍⚕️", class: "" }, { id: 20, icon: "🥷", class: "" },
+            { id: 21, icon: "🧛", class: "" }, { id: 22, icon: "🧙‍♂️", class: "" }, { id: 23, icon: "👻", class: "" },
+            { id: 24, icon: "🦖", class: "" }, { id: 25, icon: "🦈", class: "" }, { id: 26, icon: "🐙", class: "" },
+            { id: 27, icon: "🍄", class: "" }, { id: 28, icon: "⛄", class: "" }, { id: 29, icon: "🤡", class: "" },
+            { id: 30, icon: "🤠", class: "" }
+        ];
+
+        const ALIEN_BOTS = [
+            { name: "Zorg", icon: "👽" }, { name: "Krang", icon: "👾" }, { name: "Xylos", icon: "🤖" },
+            { name: "Gorgon", icon: "👹" }, { name: "Vort", icon: "👺" }, { name: "Nebula", icon: "👻" },
+            { name: "Sylar", icon: "💀" }, { name: "Drax", icon: "👿" }, { name: "Pluto", icon: "🤡" }
+        ];
+
+        const MEMORY_COLORS = [
+            '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#64748b'
         ];
 
         let isOffline = false;
@@ -447,9 +452,7 @@
         let unsubscribeData = null;
 
         try {
-            if (typeof __firebase_config === 'undefined') {
-                throw new Error("Local File Detected");
-            }
+            if (typeof __firebase_config === 'undefined') { throw new Error("Local File Detected"); }
             const firebaseConfig = JSON.parse(__firebase_config);
             firebaseApp = initializeApp(firebaseConfig);
             firebaseAuth = getAuth(firebaseApp);
@@ -486,7 +489,6 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); 
             osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
-            
             if (type === 'click') { osc.frequency.setValueAtTime(600, now); gain.gain.exponentialRampToValueAtTime(0.001, now+0.1); osc.start(now); osc.stop(now+0.1); }
             else if (type === 'pop') { osc.frequency.setValueAtTime(800,now); gain.gain.linearRampToValueAtTime(0.001,now+0.1); osc.start(now); osc.stop(now+0.1); }
             else if (type === 'correct') { osc.type='sine'; osc.frequency.setValueAtTime(400,now); osc.frequency.linearRampToValueAtTime(800,now+0.1); gain.gain.setValueAtTime(0.1,now); gain.gain.linearRampToValueAtTime(0.001,now+0.3); osc.start(now); osc.stop(now+0.3); }
@@ -576,27 +578,55 @@
         }
 
         async function resetDataHybrid() {
-            if(confirm('Profil sıfırlansın mı?')) {
+            if(confirm('Profil ve tüm ilerleme sıfırlansın mı?')) {
                 if(isOffline) localStorage.removeItem(STABLE_LOCAL_KEY);
                 else if (currentUser) await deleteDoc(doc(firebaseDb, 'artifacts', appId, 'users', currentUser.uid, 'gameData', STABLE_FIRESTORE_PATH));
+                localStorage.removeItem(STABLE_LOCAL_KEY_BOTS);
                 playerData = { name: "Astronot", xp: 0, rank: "Çaylak", avatarId: 0 };
                 updateUI(); location.reload();
             }
         }
 
-        window.changeAvatar = (dir) => {
-            playSound('pop');
-            let newId = playerData.avatarId + dir;
-            if(newId < 0) newId = AVATARS.length - 1;
-            if(newId >= AVATARS.length) newId = 0;
-            playerData.avatarId = newId;
-            const el = document.getElementById('mainAvatarDisplay');
-            el.classList.remove('pulse');
-            void el.offsetWidth;
-            el.classList.add('pulse');
-            updateUI();
-            saveDataHybrid();
-        }
+        window.openAvatarModal = () => {
+            playSound('click');
+            const modal = document.getElementById('avatarModal');
+            const grid = document.getElementById('avatarGridContainer');
+            grid.innerHTML = '';
+            
+            AVATARS.forEach((av) => {
+                const btn = document.createElement('div');
+                const isSelected = playerData.avatarId === av.id;
+                
+                let baseClass = `avatar-option-btn w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-3xl sm:text-4xl cursor-pointer border-2 transition relative`;
+                if(av.class) baseClass += ` ${av.class}`;
+                
+                if(isSelected) {
+                    btn.className = `${baseClass} border-green-400 bg-green-500/20 shadow-[0_0_15px_rgba(74,222,128,0.6)]`;
+                } else {
+                    btn.className = `${baseClass} border-white/20 bg-white/5 hover:border-white/50`;
+                }
+                
+                btn.textContent = av.icon;
+                
+                if(isSelected) {
+                    const check = document.createElement('div');
+                    check.className = "absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md border border-black";
+                    check.innerHTML = "✓";
+                    btn.appendChild(check);
+                }
+
+                btn.onclick = () => {
+                    playerData.avatarId = av.id;
+                    saveDataHybrid();
+                    updateUI();
+                    modal.classList.add('hidden');
+                    playSound('pop');
+                };
+                grid.appendChild(btn);
+            });
+            
+            modal.classList.remove('hidden');
+        };
 
         window.updateNameLive = () => {
              const rawVal = document.getElementById('playerNameInput').value;
@@ -620,6 +650,8 @@
             
             const av = AVATARS[playerData.avatarId] || AVATARS[0];
             document.getElementById('mainAvatarDisplay').textContent = av.icon;
+            document.getElementById('mainAvatarDisplay').className = 'avatar-circle ' + (av.class || "");
+            
             document.getElementById('miniAvatarDisplay').textContent = av.icon;
 
             const ranks = [{l:0,t:"Çaylak"},{l:500,t:"Pilot"},{l:1500,t:"Kaptan"},{l:3000,t:"Komutan"},{l:5000,t:"Efsane"}];
@@ -631,27 +663,21 @@
         let selectedNumbers = new Set();
         let activeGameMode = "";
         let gameTimer = null;
+        let raceBotInterval = null;
         let isGameActive = false;
         let currentSessionXP = 0;
         let currentLives = 3;
+        let activeEnergyIntervals = [];
 
         const BTN_DEFAULT = "bg-white/10 border border-white/20 rounded-lg py-3 text-sm font-bold hover:bg-white/20 transition cursor-pointer";
         const BTN_SELECTED = "bg-blue-600 text-white border border-blue-400 rounded-lg py-3 text-sm font-bold shadow-lg transform scale-105 transition cursor-pointer";
 
         function gainXP(amount) {
             playerData.xp += amount; currentSessionXP += amount;
+            simulateBotActivity();
             saveDataHybrid(); updateUI();
         }
 
-        // --- YENİ POPUP FONKSİYONU ---
-        function showGlobalFeedback(text) {
-            const p = document.getElementById('globalFeedbackPopup');
-            document.getElementById('globalFeedbackText').textContent = text;
-            p.classList.add('show');
-            setTimeout(() => p.classList.remove('show'), 1200);
-        }
-
-        // --- CAN SİSTEMİ FONKSİYONLARI ---
         function updateLivesUI() {
             const containers = document.querySelectorAll('.hearts-container');
             containers.forEach(cont => {
@@ -671,15 +697,10 @@
             currentLives--;
             playSound('hurt');
             updateLivesUI();
-            
-            // Ekran Kırmızı Yanıp Sönme
             const flash = document.getElementById('damageFlash');
             flash.classList.add('active');
             setTimeout(() => flash.classList.remove('active'), 200);
-
-            if (currentLives <= 0) {
-                playerDeathSequence(0, correctAnswerText); // Skor önemli değil, ölüm ekranı aynı
-            }
+            if (currentLives <= 0) { playerDeathSequence(0, correctAnswerText); }
         }
 
         window.initGame = () => {
@@ -691,27 +712,15 @@
              }
              window.initStudyMenu(); 
              
-             // TOUCH EVENTS İÇİN LISTENER EKLEME (ENERJİ AVI)
              const eGameArea = document.getElementById('energyGameArea');
              let touchStartX = 0;
-             eGameArea.addEventListener('touchstart', (e) => {
-                 touchStartX = e.touches[0].clientX;
-             }, {passive: false});
-             
+             eGameArea.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, {passive: false});
              eGameArea.addEventListener('touchmove', (e) => {
                  if(!isGameActive || activeGameMode !== 'energy') return;
-                 e.preventDefault(); // Sayfa kaydırmayı engelle
-                 const currentX = e.touches[0].clientX;
-                 const diffX = currentX - touchStartX;
-                 
-                 // Hassasiyet eşiği 30px
-                 if(diffX > 30) {
-                     window.moveEnergyShip('right');
-                     touchStartX = currentX; // Sürekli hareket için reset
-                 } else if (diffX < -30) {
-                     window.moveEnergyShip('left');
-                     touchStartX = currentX;
-                 }
+                 e.preventDefault();
+                 const currentX = e.touches[0].clientX; const diffX = currentX - touchStartX;
+                 if(diffX > 30) { window.moveEnergyShip('right'); touchStartX = currentX; } 
+                 else if (diffX < -30) { window.moveEnergyShip('left'); touchStartX = currentX; }
              }, {passive: false});
 
              initAuth();
@@ -735,16 +744,33 @@
             }
         }
 
-        function hideAll() { document.querySelectorAll('.glass-panel, [id$="Screen"]').forEach(e => e.classList.add('hidden')); document.getElementById('brandBadge').classList.add('hidden'); }
+        function clearAllIntervals() {
+            clearInterval(gameTimer);
+            clearInterval(raceBotInterval);
+            activeEnergyIntervals.forEach(i => clearInterval(i));
+            activeEnergyIntervals = [];
+            document.querySelectorAll('.energy-orb').forEach(m => m.remove());
+        }
+
+        function hideAll() { 
+            const screens = ['startScreen', 'gameCenterScreen', 'leaderboardScreen', 'levelSelectScreen', 'quizGameScreen', 'rocketOpsScreen', 'energyScreen', 'memoryGameScreen', 'gameOverScreen', 'studyMenuScreen', 'studyDetailScreen', 'raceGameScreen', 'raceDifficultyScreen'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+            document.getElementById('brandBadge').classList.add('hidden'); 
+        }
         
         window.backToMenu = () => { 
             playSound('click'); hideAll(); updateUI();
+            clearAllIntervals();
             document.body.classList.remove('game-mode');
             document.getElementById('startScreen').classList.remove('hidden'); 
             document.getElementById('brandBadge').classList.remove('hidden'); 
         }
         window.goToGameCenter = () => { 
             playSound('click'); hideAll(); updateUI();
+            clearAllIntervals();
             document.body.classList.remove('game-mode');
             document.getElementById('gameCenterScreen').classList.remove('hidden'); 
             document.getElementById('brandBadge').classList.remove('hidden'); 
@@ -752,42 +778,59 @@
         window.goToStudyMenu = () => { playSound('click'); hideAll(); document.getElementById('studyMenuScreen').classList.remove('hidden'); }
         
         window.prepareGame = (mode) => {
-            playSound('click'); activeGameMode = mode; hideAll(); document.getElementById('levelSelectScreen').classList.remove('hidden');
-            if(selectedNumbers.size === 0) window.selectAllNumbers(); else updateGridVisuals();
+            playSound('click'); activeGameMode = mode; 
+            hideAll(); 
+            if(mode === 'racePre') {
+                 document.getElementById('raceDifficultyScreen').classList.remove('hidden');
+            } else {
+                 document.getElementById('levelSelectScreen').classList.remove('hidden');
+                 if(selectedNumbers.size === 0) window.selectAllNumbers(); else updateGridVisuals();
+            }
         }
 
         window.launchSelectedGame = () => {
             playSound('click'); hideAll();
+            clearAllIntervals();
             document.body.classList.add('game-mode');
-            currentSessionXP = 0;
-            currentLives = 3; // Her oyuna 3 canla başla
-            updateLivesUI();
+            currentSessionXP = 0; currentLives = 3; updateLivesUI();
             if(activeGameMode === 'quiz') startQuizGame();
             else if(activeGameMode === 'memory') startMemoryGame();
             else if(activeGameMode === 'energy') startEnergyGame();
             else if(activeGameMode === 'rocketOps') startRocketOpsGame();
+            else if(activeGameMode === 'race') initRaceLogic();
         }
 
         window.quitGame = () => { 
-            isGameActive = false; clearInterval(gameTimer); 
-            document.querySelectorAll('.energy-orb').forEach(m => m.remove()); 
+            isGameActive = false; 
+            clearAllIntervals();
             window.goToGameCenter(); 
         }
 
-        function endGame(score) {
-            isGameActive = false; clearInterval(gameTimer); hideAll();
+        function endGame(score, customTitle, customMessage, icon) {
+            isGameActive = false; 
+            clearAllIntervals();
+            hideAll();
             saveDataHybrid(); 
             document.body.classList.remove('game-mode');
             document.getElementById('earnedXP').textContent = currentSessionXP; 
             document.getElementById('gameOverScreen').classList.remove('hidden');
+            
+            if(customTitle) document.getElementById('gameOverTitle').textContent = customTitle;
+            else document.getElementById('gameOverTitle').textContent = "Oyun Bitti!";
+            
+            if(icon) document.getElementById('gameOverIcon').textContent = icon;
+            else document.getElementById('gameOverIcon').textContent = "🏆";
         }
 
         function playerDeathSequence(currentScore, correctAnswerText) {
             if (!isGameActive) return;
-            isGameActive = false; clearInterval(gameTimer);
+            isGameActive = false; 
+            clearAllIntervals();
+            
             let playerEl = null;
             if(activeGameMode === 'rocketOps') playerEl = document.getElementById('opsPlayerRocket');
             else if(activeGameMode === 'energy') playerEl = document.getElementById('energyShip');
+            
             if(playerEl) {
                 const rect = playerEl.getBoundingClientRect();
                 createExplosion(rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -797,11 +840,25 @@
             }
             const overlay = document.getElementById('deathOverlay');
             document.getElementById('correctAnswerDisplay').textContent = correctAnswerText;
+            document.getElementById('deathTitle').textContent = "GÖREV BAŞARISIZ!";
+            document.getElementById('deathMessage').textContent = "Tüm can hakların tükendi!";
             overlay.classList.add('show');
             setTimeout(() => { overlay.classList.remove('show'); endGame(currentScore); }, 2500);
         }
+        
+        function showRaceLostScreen() {
+             if(activeGameMode !== 'race') return;
+             isGameActive = false; 
+             clearAllIntervals();
+             const overlay = document.getElementById('deathOverlay');
+             document.getElementById('deathTitle').textContent = "YARIŞI KAYBETTİN!";
+             document.getElementById('deathMessage').textContent = "Uzaylı bitiş çizgisine önce ulaştı.";
+             document.getElementById('correctAnswerDisplay').textContent = "---";
+             overlay.classList.add('show');
+             setTimeout(() => { overlay.classList.remove('show'); endGame(0, "İkinci Oldun", null, "🥈"); }, 2500);
+        }
 
-        // --- QUIZ ---
+        // --- GAME LOGIC ---
         let qScore = 0;
         function startQuizGame() { document.getElementById('quizGameScreen').classList.remove('hidden'); qScore = 0; updateQuizScore(); nextQuizQuestion(); }
         function nextQuizQuestion() {
@@ -816,34 +873,24 @@
                 btn.onclick = () => {
                     clearInterval(gameTimer);
                     if(op === ans) { 
-                        playSound('correct'); btn.classList.add('bg-green-500');
-                        showGlobalFeedback(`${n1} x ${n2} = ${ans}`); // POPUP
+                        playSound('correct'); btn.classList.add('bg-green-500'); 
                         const turnScore = 100 + Math.floor(parseFloat(document.getElementById('quizTime').textContent)*10);
                         qScore += turnScore; gainXP(Math.ceil(turnScore / 5));
-                        updateQuizScore(); setTimeout(nextQuizQuestion, 1000); 
+                        updateQuizScore(); setTimeout(nextQuizQuestion, 500); 
                     } else { 
-                        // YANLIŞ CEVAP - CAN SİL
-                        btn.classList.add('bg-red-500', 'shake-wrong'); 
-                        takeDamage(`${n1} x ${n2} = ${ans}`);
-                        if(currentLives > 0) setTimeout(nextQuizQuestion, 1000);
+                        btn.classList.add('bg-red-500', 'shake-wrong'); takeDamage(`${n1} x ${n2} = ${ans}`);
+                        if(currentLives > 0) setTimeout(nextQuizQuestion, 500);
                     }
                 }; container.appendChild(btn);
             });
             let time = 10.0; clearInterval(gameTimer); document.getElementById('quizTime').textContent = "10.0";
             gameTimer = setInterval(() => { 
-                time -= 0.1; 
-                document.getElementById('quizTime').textContent = time.toFixed(1); 
-                if(time <= 0) { 
-                    clearInterval(gameTimer); 
-                    // SÜRE BİTTİ - CAN SİL
-                    takeDamage(`${n1} x ${n2} = ${ans}`);
-                    if(currentLives > 0) setTimeout(nextQuizQuestion, 1000);
-                } 
+                time -= 0.1; document.getElementById('quizTime').textContent = time.toFixed(1); 
+                if(time <= 0) { clearInterval(gameTimer); takeDamage(`${n1} x ${n2} = ${ans}`); if(currentLives > 0) setTimeout(nextQuizQuestion, 500); } 
             }, 100);
         }
         function updateQuizScore() { document.getElementById('quizScore').textContent = qScore; }
 
-        // --- ROCKET OPS ---
         let opsScore = 0; let opsTargetAns = 0;
         function startRocketOpsGame() { isGameActive = true; document.getElementById('rocketOpsScreen').classList.remove('hidden'); opsScore = 0; document.getElementById('opsScore').textContent = "0"; document.getElementById('opsPlayerRocket').style.visibility='visible'; nextOpsWave(); }
         function nextOpsWave() {
@@ -854,11 +901,11 @@
             let opts = new Set([opsTargetAns]); while(opts.size<4) { let w=opsTargetAns+(Math.floor(Math.random()*8)-4); if(w<=0||w===opsTargetAns) w+=5; opts.add(w); }
             Array.from(opts).sort(()=>Math.random()-0.5).forEach(v => {
                 const btn = document.createElement('div'); btn.className = 'asteroid-btn'; btn.textContent = v;
-                btn.onclick = (e) => shootLaserAt(btn, v, n1, n2); cont.appendChild(btn);
+                btn.onclick = (e) => shootLaserAt(btn, v); cont.appendChild(btn);
             });
             setTimeout(() => { if(isGameActive) cont.style.opacity = '1'; }, 200);
         }
-        function shootLaserAt(targetBtn, val, n1, n2) {
+        function shootLaserAt(targetBtn, val) {
             if(!isGameActive) return;
             const gameArea = document.getElementById('opsGameArea'); const rocket = document.getElementById('opsPlayerRocket'); const laser = document.createElement('div'); laser.className = 'laser-beam';
             const rRect = rocket.getBoundingClientRect(); const tRect = targetBtn.getBoundingClientRect(); const gRect = gameArea.getBoundingClientRect();
@@ -872,140 +919,252 @@
                 laser.remove();
                 if(val === opsTargetAns) { 
                     playSound('boom'); createExplosion(tRect.left + tRect.width/2, tRect.top + tRect.height/2); 
-                    showGlobalFeedback(`${n1} x ${n2} = ${opsTargetAns}`); // POPUP
-                    targetBtn.style.visibility = 'hidden'; opsScore += 100; gainXP(20);
-                    document.getElementById('opsScore').textContent = opsScore; setTimeout(nextOpsWave, 800); 
-                } else { 
-                    // YANLIŞ ASTEROİD - CAN SİL
-                    targetBtn.classList.add('bg-red-500'); 
-                    takeDamage(opsTargetAns);
-                    targetBtn.style.visibility = 'hidden';
-                }
+                    targetBtn.style.visibility = 'hidden'; opsScore += 100; gainXP(20); document.getElementById('opsScore').textContent = opsScore; setTimeout(nextOpsWave, 500); 
+                } else { targetBtn.classList.add('bg-red-500'); takeDamage(opsTargetAns); targetBtn.style.visibility = 'hidden'; }
             }, 200);
         }
 
-        // --- ENERGY HUNT ---
         let energyLane = 1; const LANE_POSITIONS = [20, 50, 80]; let energyScoreVal = 0; let currentEnergyAns = 0;
-        let activeEnergyIntervals = []; // Interval takibi
-
-        function startEnergyGame() { 
-            isGameActive = true; document.getElementById('energyScreen').classList.remove('hidden'); energyScoreVal = 0; 
-            document.getElementById('energyScore').textContent = "0"; energyLane = 1; document.getElementById('energyShip').style.visibility='visible'; 
-            updateEnergyShipPos(); 
-            clearEnergyWave(); 
-            spawnEnergyWave(); 
-        }
-
+        function startEnergyGame() { isGameActive = true; document.getElementById('energyScreen').classList.remove('hidden'); energyScoreVal = 0; document.getElementById('energyScore').textContent = "0"; energyLane = 1; document.getElementById('energyShip').style.visibility='visible'; updateEnergyShipPos(); clearEnergyWave(); spawnEnergyWave(); }
         function updateEnergyShipPos() { document.getElementById('energyShip').style.left = LANE_POSITIONS[energyLane] + '%'; }
-        
-        window.moveEnergyShip = (dir) => { 
-            if(!isGameActive) return; 
-            if(dir === 'left' && energyLane > 0) energyLane--; 
-            if(dir === 'right' && energyLane < 2) energyLane++; 
-            updateEnergyShipPos(); 
-        }
-
-        function clearEnergyWave() {
-            activeEnergyIntervals.forEach(i => clearInterval(i));
-            activeEnergyIntervals = [];
-            document.querySelectorAll('.energy-orb').forEach(e => e.remove());
-        }
-
+        window.moveEnergyShip = (dir) => { if(!isGameActive) return; if(dir === 'left' && energyLane > 0) energyLane--; if(dir === 'right' && energyLane < 2) energyLane++; updateEnergyShipPos(); }
+        function clearEnergyWave() { activeEnergyIntervals.forEach(i => clearInterval(i)); activeEnergyIntervals = []; document.querySelectorAll('.energy-orb').forEach(e => e.remove()); }
         function spawnEnergyWave() {
             if(!isGameActive || document.getElementById('energyScreen').classList.contains('hidden')) return;
-            
-            clearEnergyWave();
-
-            const n2 = Array.from(selectedNumbers)[Math.floor(Math.random()*selectedNumbers.size)]; const n1 = Math.floor(Math.random()*9)+2;
-            currentEnergyAns = n1*n2; document.getElementById('energyQuestion').textContent = `${n1} x ${n2}`;
+            clearEnergyWave(); const n2 = Array.from(selectedNumbers)[Math.floor(Math.random()*selectedNumbers.size)]; const n1 = Math.floor(Math.random()*9)+2; currentEnergyAns = n1*n2; document.getElementById('energyQuestion').textContent = `${n1} x ${n2}`;
             let answers = [currentEnergyAns]; while(answers.length < 3) { let f = currentEnergyAns + Math.floor(Math.random()*10)-5; if(f>0 && f!==currentEnergyAns && !answers.includes(f)) answers.push(f); }
             answers.sort(() => Math.random()-0.5);
-            
             answers.forEach((ans, i) => {
-                const m = document.createElement('div'); m.className = 'energy-orb'; m.textContent = ans; 
-                m.style.left = LANE_POSITIONS[i] + '%'; m.style.transform = 'translateX(-50%)'; m.style.top = '-60px'; 
-                document.getElementById('energyGameArea').appendChild(m);
-                
+                const m = document.createElement('div'); m.className = 'energy-orb'; m.textContent = ans; m.style.left = LANE_POSITIONS[i] + '%'; m.style.transform = 'translateX(-50%)'; m.style.top = '-60px'; document.getElementById('energyGameArea').appendChild(m);
                 let topPos = -60; const speed = 2 + (energyScoreVal/500);
-                
                 const fall = setInterval(() => {
                     if(!isGameActive || document.getElementById('energyScreen').classList.contains('hidden')) { clearInterval(fall); m.remove(); return; }
                     topPos += speed; m.style.top = topPos + 'px';
-                    
-                    // ÇARPIŞMA KONTROLÜ
-                    if(topPos > 330 && topPos < 380) { 
-                        if(energyLane === i) { 
-                            if(ans === currentEnergyAns) { 
-                                playSound('correct'); energyScoreVal += 50; gainXP(10);
-                                showGlobalFeedback(`${n1} x ${n2} = ${currentEnergyAns}`); // POPUP
-                                document.getElementById('energyScore').textContent = energyScoreVal; 
-                                clearEnergyWave(); // Temizle ve yeni dalga
-                                setTimeout(spawnEnergyWave, 500); 
-                            } else { 
-                                // YANLIŞ KÜREYE ÇARPTI -> HEPSİNİ SİL
-                                clearEnergyWave();
-                                takeDamage(currentEnergyAns);
-                                if(currentLives > 0) setTimeout(spawnEnergyWave, 500);
-                            } 
-                        } 
-                    }
-                    // AŞAĞI DÜŞME KONTROLÜ
-                    if(topPos > 420) { 
-                        if(ans === currentEnergyAns) {
-                            // DOĞRU CEVAP KAÇTI -> HEPSİNİ SİL
-                            clearEnergyWave();
-                            takeDamage(currentEnergyAns);
-                            if(currentLives > 0) setTimeout(spawnEnergyWave, 500);
-                        } else {
-                            clearInterval(fall); m.remove();
-                        }
-                    }
-                }, 20);
-                activeEnergyIntervals.push(fall);
+                    if(topPos > 330 && topPos < 380) { if(energyLane === i) { if(ans === currentEnergyAns) { playSound('correct'); energyScoreVal += 50; gainXP(10); document.getElementById('energyScore').textContent = energyScoreVal; clearEnergyWave(); setTimeout(spawnEnergyWave, 500); } else { clearEnergyWave(); takeDamage(currentEnergyAns); if(currentLives > 0) setTimeout(spawnEnergyWave, 500); } } }
+                    if(topPos > 420) { if(ans === currentEnergyAns) { clearEnergyWave(); takeDamage(currentEnergyAns); if(currentLives > 0) setTimeout(spawnEnergyWave, 500); } else { clearInterval(fall); m.remove(); } }
+                }, 20); activeEnergyIntervals.push(fall);
             });
         }
 
-        // --- MEMORY ---
         let memoryCards = [], flippedCards = [], matchedPairs = 0, totalPairs = 6;
         function startMemoryGame() {
-            document.getElementById('memoryGameScreen').classList.remove('hidden');
+            document.getElementById('memoryGameScreen').classList.remove('hidden'); document.getElementById('memPopup').classList.remove('show');
             const grid = document.getElementById('memoryGrid'); grid.innerHTML = ''; memoryCards = []; flippedCards = []; matchedPairs = 0;
-            const nums = Array.from(selectedNumbers); document.getElementById('memPairsLeft').textContent = totalPairs; document.getElementById('memMoves').textContent = 0;
-            for(let i=0; i<totalPairs; i++) {
-                const n2 = nums[Math.floor(Math.random()*nums.length)]; const n1 = Math.floor(Math.random()*9)+2; const ans = n1*n2;
-                memoryCards.push({ id: i, type: 'q', content: `${n1}x${n2}`, val: ans, full: `${n1}x${n2}=${ans}` }); memoryCards.push({ id: i, type: 'a', content: ans, val: ans, full: `${n1}x${n2}=${ans}` });
+            let nums = Array.from(selectedNumbers);
+            if(nums.length === 0) nums = [1,2,3,4,5,6,7,8,9,10];
+            
+            document.getElementById('memPairsLeft').textContent = totalPairs; document.getElementById('memMoves').textContent = 0;
+            
+            const pairColors = MEMORY_COLORS.sort(() => 0.5 - Math.random()).slice(0, totalPairs);
+            
+            let usedResults = new Set();
+            for(let i=0; i<totalPairs; i++) { 
+                let n1, n2, ans;
+                let attempts = 0;
+                do {
+                    n2 = nums[Math.floor(Math.random()*nums.length)]; 
+                    n1 = Math.floor(Math.random()*9)+2; 
+                    ans = n1*n2;
+                    attempts++;
+                } while(usedResults.has(ans) && attempts < 50);
+                
+                usedResults.add(ans);
+                
+                const cardColor = pairColors[i];
+                memoryCards.push({ id: i, type: 'q', content: `${n1}x${n2}`, val: ans, full: `${n1}x${n2}=${ans}`, color: cardColor }); 
+                memoryCards.push({ id: i, type: 'a', content: ans, val: ans, full: `${n1}x${n2}=${ans}`, color: cardColor }); 
             }
+            
             memoryCards.sort(() => Math.random() - 0.5);
             memoryCards.forEach((card, index) => {
-                const el = document.createElement('div'); el.className = 'memory-card'; el.dataset.index = index; el.innerHTML = `<div class="card-front">${card.content}</div><div class="card-back">?</div>`;
+                const el = document.createElement('div'); el.className = 'memory-card'; el.dataset.index = index; 
+                el.innerHTML = `<div class="card-front">${card.content}</div><div class="card-back">?</div>`;
                 el.onclick = () => {
-                    if(el.classList.contains('flipped') || el.classList.contains('solved') || flippedCards.length >= 2) return;
+                    if(el.classList.contains('flipped') || el.classList.contains('matched') || flippedCards.length >= 2) return;
                     playSound('pop'); el.classList.add('flipped'); flippedCards.push({el, card});
                     if(flippedCards.length === 2) {
                         document.getElementById('memMoves').textContent = parseInt(document.getElementById('memMoves').textContent)+1;
-                        if(flippedCards[0].card.val === flippedCards[1].card.val) {
-                            playSound('correct'); flippedCards.forEach(f => f.el.classList.add('matched')); matchedPairs++; document.getElementById('memPairsLeft').textContent = totalPairs - matchedPairs;
-                            gainXP(20);
-                            showGlobalFeedback(card.full.replace('x', ' x ').replace('=', ' = ')); // GLOBAL POPUP
-                            setTimeout(() => { flippedCards.forEach(f => { f.el.classList.remove('matched'); f.el.classList.add('solved'); }); flippedCards = []; if(matchedPairs === totalPairs) setTimeout(() => endGame(0), 500); }, 1000);
-                        } else { playSound('wrong'); setTimeout(() => { flippedCards.forEach(f => f.el.classList.remove('flipped')); flippedCards = []; }, 1000); }
+                        if(flippedCards[0].card.val === flippedCards[1].card.val) { 
+                            playSound('correct'); 
+                            
+                            const matchedColor = flippedCards[0].card.color;
+                            flippedCards.forEach(f => {
+                                f.el.classList.add('matched');
+                                const frontFace = f.el.querySelector('.card-front');
+                                frontFace.style.background = matchedColor;
+                                frontFace.style.borderColor = 'white';
+                                frontFace.style.boxShadow = `0 0 15px ${matchedColor}`;
+                            });
+
+                            matchedPairs++; 
+                            document.getElementById('memPairsLeft').textContent = totalPairs - matchedPairs; 
+                            gainXP(20); 
+                            const popup = document.getElementById('memPopup'); 
+                            document.getElementById('memPopupText').textContent = card.full.replace('x', ' x ').replace('=', ' = '); 
+                            popup.classList.add('show'); 
+                            setTimeout(() => { 
+                                popup.classList.remove('show'); 
+                                flippedCards = []; 
+                                if(matchedPairs === totalPairs) setTimeout(() => endGame(0), 500); 
+                            }, 1500); 
+                        } else { 
+                            playSound('wrong'); 
+                            setTimeout(() => { 
+                                flippedCards.forEach(f => f.el.classList.remove('flipped')); 
+                                flippedCards = []; 
+                            }, 1000); 
+                        }
                     }
                 }; grid.appendChild(el);
             });
         }
+        
+        let racePosPlayer = 0; let racePosBot = 0; let raceTarget = 100; let raceDiffConfig = {};
+        
+        window.startRaceGame = (difficulty) => {
+             if(difficulty === 'easy') { raceDiffConfig = { stepMin: 2, stepMax: 4, interval: 1500, xp: 30, label: "KOLAY" }; } 
+             else if(difficulty === 'medium') { raceDiffConfig = { stepMin: 3, stepMax: 6, interval: 1200, xp: 60, label: "ORTA" }; } 
+             else { raceDiffConfig = { stepMin: 6, stepMax: 10, interval: 1000, xp: 120, label: "ZOR" }; }
+             activeGameMode = 'race'; hideAll(); document.getElementById('levelSelectScreen').classList.remove('hidden');
+             if(selectedNumbers.size === 0) window.selectAllNumbers(); else updateGridVisuals();
+        };
+        
+        function initRaceLogic() {
+            document.getElementById('raceGameScreen').classList.remove('hidden');
+            racePosPlayer = 0; racePosBot = 0; isGameActive = true;
+            document.getElementById('raceDiffBadge').textContent = "Zorluk: " + raceDiffConfig.label;
+            const pIcon = AVATARS[playerData.avatarId] || AVATARS[0];
+            document.getElementById('playerRunnerIcon').textContent = pIcon.icon;
+            document.getElementById('playerRunnerName').textContent = "Sen";
+            const randomBot = ALIEN_BOTS[Math.floor(Math.random() * ALIEN_BOTS.length)];
+            document.getElementById('botRunnerIcon').textContent = randomBot.icon;
+            document.getElementById('botRunnerName').textContent = randomBot.name;
+            updateRacePositions();
+            clearInterval(raceBotInterval);
+            raceBotInterval = setInterval(() => {
+                if(!isGameActive || activeGameMode !== 'race') { clearInterval(raceBotInterval); return; }
+                const step = raceDiffConfig.stepMin + Math.random() * (raceDiffConfig.stepMax - raceDiffConfig.stepMin);
+                racePosBot += step; updateRacePositions();
+                if(racePosBot >= raceTarget) { showRaceLostScreen(); }
+            }, raceDiffConfig.interval);
+            nextRaceQuestion();
+        }
+        
+        function updateRacePositions() {
+            const p = Math.min(racePosPlayer, 100); const b = Math.min(racePosBot, 100);
+            document.getElementById('playerRunner').style.left = `calc(${p}% - 30px)`;
+            document.getElementById('botRunner').style.left = `calc(${b}% - 30px)`;
+        }
+        
+        function nextRaceQuestion() {
+            if(!isGameActive) return;
+            const n1 = Math.floor(Math.random()*10)+1; const nums = Array.from(selectedNumbers); const n2 = nums[Math.floor(Math.random()*nums.length)]; const ans = n1*n2;
+            document.getElementById('rNum1').textContent = n1; document.getElementById('rNum2').textContent = n2;
+            let opts = new Set([ans]); while(opts.size < 4) { let f = ans + (Math.floor(Math.random()*10)-5); if(f>0 && f!==ans) opts.add(f); }
+            const container = document.getElementById('raceOptions'); container.innerHTML = '';
+            Array.from(opts).sort(()=>Math.random()-0.5).forEach(op => {
+                const btn = document.createElement('button'); btn.className = "bg-white/10 border border-white/20 py-4 rounded-xl text-3xl font-bold hover:bg-white/20 transition shadow-lg active:scale-95"; btn.textContent = op;
+                btn.onclick = () => {
+                    if(op === ans) { 
+                        playSound('correct'); btn.classList.add('bg-green-500'); 
+                        racePosPlayer += 10; updateRacePositions();
+                        if(racePosPlayer >= raceTarget) { gainXP(raceDiffConfig.xp); endGame(0, "YARIŞI KAZANDIN!", "Uzaylıyı yendin!", "🥇"); } 
+                        else { setTimeout(nextRaceQuestion, 200); }
+                    } else { btn.classList.add('bg-red-500', 'shake-wrong'); playSound('wrong'); setTimeout(nextRaceQuestion, 500); }
+                }; container.appendChild(btn);
+            });
+        }
 
         window.initStudyMenu = () => { 
-            const g = document.getElementById('studyButtonsGrid'); 
+            const g = document.getElementById('studyButtonsGrid'); g.innerHTML = '';
             for(let i=1; i<=10; i++) { 
-                const b = document.createElement('button'); b.className="bg-white/10 hover:bg-purple-600 border border-white/20 p-4 rounded-xl font-bold transition"; b.innerHTML=`${i}'ler`;
-                b.onclick=()=>{ 
-                    playSound('click'); hideAll(); document.getElementById('studyDetailScreen').classList.remove('hidden'); document.getElementById('studyTitle').textContent=i;
-                    const c = document.getElementById('visualContainer'); c.innerHTML='';
-                    for(let j=1; j<=10; j++){ const r = document.createElement('div'); r.className="w-full bg-white/5 p-2 rounded flex justify-between px-4 mb-2"; r.innerHTML = `<span>${j} x ${i}</span> <span class="text-yellow-400 font-bold">= ${j*i}</span>`; c.appendChild(r); }
+                const b = document.createElement('button'); 
+                b.className = "bg-gradient-to-br from-white/10 to-white/5 hover:from-purple-600 hover:to-pink-600 border border-white/10 hover:border-white/40 p-3 rounded-2xl font-bold transition flex flex-col items-center justify-center gap-1 group aspect-square"; 
+                b.innerHTML = `<div class="text-3xl group-hover:scale-110 transition">📚</div><div class="text-sm font-bold text-gray-300 group-hover:text-white">${i}'ler</div>`;
+                b.onclick = () => { 
+                    playSound('click'); hideAll(); 
+                    document.getElementById('studyDetailScreen').classList.remove('hidden'); 
+                    document.getElementById('studyTitle').textContent = i;
+                    const c = document.getElementById('visualContainer'); c.innerHTML = '';
+                    for(let j=1; j<=10; j++){ 
+                        const row = document.createElement('div'); row.className = "study-row";
+                        row.innerHTML = `<span>${j} x ${i}</span><span>= ${j*i}</span>`; c.appendChild(row); 
+                    }
                 }; g.appendChild(b);
             } 
         }
 
+        const BOT_NAMES = ["Zeynep", "Kerem", "Elif", "Mustafa", "Defne", "Çınar", "Eylül", "Yiğit", "Azra", "Mert", "Deniz", "Burak", "Cemre", "Eren", "Ada", "Rüzgar", "Derin", "Aras", "Nehir", "Poyraz", "Alya", "Kaan", "Duru", "Emir", "Öykü", "Umut", "İpek", "Sarp", "Beren", "Toprak", "Selin", "Barış", "Ece", "Alp", "Naz", "Doruk", "Ela", "Can", "Mira", "Onur", "Lina", "Bora", "İdil", "Efe", "Maya", "Tuna", "Nil", "Atlas", "Güneş", "Kuzey"];
+        let virtualBots = [];
+
+        function ensureBotsInitialized() {
+            const stored = localStorage.getItem(STABLE_LOCAL_KEY_BOTS);
+            if (stored) {
+                try {
+                    virtualBots = JSON.parse(stored);
+                    if(virtualBots.length !== BOT_NAMES.length) initNewBotUniverse();
+                    else if (virtualBots[0] && virtualBots[0].avatarId === undefined) { virtualBots.forEach(b => { b.avatarId = Math.floor(Math.random() * AVATARS.length); }); saveBots(); }
+                } catch (e) { initNewBotUniverse(); }
+            } else { initNewBotUniverse(); }
+        }
+
+        function initNewBotUniverse() {
+            virtualBots = [];
+            BOT_NAMES.forEach((name, index) => {
+                let startXP = 0;
+                if(index < 5) startXP = 7000 + Math.floor(Math.random() * 2000);
+                else if (index < 15) startXP = 4000 + Math.floor(Math.random() * 2500);
+                else if (index < 30) startXP = 1500 + Math.floor(Math.random() * 2000);
+                else startXP = Math.floor(Math.random() * 1000);
+                virtualBots.push({ name: name, xp: startXP, lastPlay: Date.now(), change: 0, avatarId: Math.floor(Math.random() * AVATARS.length) });
+            });
+            saveBots();
+        }
+
+        function saveBots() { localStorage.setItem(STABLE_LOCAL_KEY_BOTS, JSON.stringify(virtualBots)); }
+
+        function simulateBotActivity() {
+            let changed = false;
+            virtualBots.forEach(bot => {
+                bot.change = 0;
+                if (Math.random() > 0.8) { const xpGain = 10 + Math.floor(Math.random() * 100); bot.xp += xpGain; bot.lastPlay = Date.now(); bot.change = xpGain; changed = true; }
+            });
+            if(changed) saveBots();
+        }
+        
+        window.openLeaderboard = () => {
+            playSound('click'); hideAll();
+            document.getElementById('leaderboardScreen').classList.remove('hidden');
+            ensureBotsInitialized(); simulateBotActivity();
+            const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
+            const playerEntry = { name: playerData.name, xp: playerData.xp, isPlayer: true, avatarId: playerData.avatarId };
+            let allRacers = [...virtualBots, playerEntry];
+            allRacers.sort((a, b) => b.xp - a.xp);
+            allRacers.forEach((u, idx) => {
+                const rank = idx + 1; if(idx > 50) return;
+                const row = document.createElement('div');
+                row.className = `leaderboard-row ${u.isPlayer ? 'player-row' : ''} rank-${rank}`;
+                const botAvatar = AVATARS[u.avatarId || 0];
+                const iconClass = botAvatar.class || "";
+                let changeHtml = ''; if(!u.isPlayer && u.change > 0) changeHtml = `<span class="xp-change xp-up">▲${u.change}</span>`;
+                
+                // HTML yapısı CSS grid'e uyumlu hale getirildi (3 çocuk eleman)
+                row.innerHTML = `
+                    <div class="flex justify-center"><div class="rank-badge">${rank}</div></div>
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="text-2xl w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 ${iconClass}" style="${iconClass ? 'border-width:2px;' : ''}">${botAvatar.icon}</div>
+                        <div class="text-sm font-bold ${u.isPlayer ? 'text-green-400' : 'text-white'} truncate">${u.name}</div>
+                    </div>
+                    <div class="flex items-center justify-end font-mono font-bold text-yellow-500 text-sm">
+                        ${u.xp} ${changeHtml}
+                    </div>
+                `;
+                listEl.appendChild(row);
+                if(u.isPlayer) setTimeout(() => row.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            });
+        };
+
+        ensureBotsInitialized();
         window.initGame();
 
     </script>
