@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uzay Macerası: Matematik Üssü v38</title>
+    <title>Uzay Macerası: Matematik Üssü v50</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap&subset=latin-ext');
@@ -42,6 +42,31 @@
         .btn-press:active { transform: scale(0.95); }
         .hidden { display: none !important; }
 
+        /* Kapat Butonu */
+        .close-btn {
+            position: absolute; top: 20px; right: 20px;
+            width: 44px; height: 44px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.4rem; font-weight: bold;
+            cursor: pointer; z-index: 2000; /* En üstte */
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .close-btn:hover { background: rgba(220, 38, 38, 0.9); border-color: #fca5a5; transform: rotate(90deg) scale(1.1); }
+
+        /* Oyun Konteynerleri için üst boşluk (Butonun altında kalmasın diye) */
+        .game-container-spacing {
+            margin-top: 70px; /* Buton için yer aç */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         .avatar-circle {
             width: 100px; height: 100px;
             background: radial-gradient(circle at 30% 30%, #4f46e5, #312e81);
@@ -60,7 +85,7 @@
         .team-bjk { border-color: #e2e8f0 !important; box-shadow: 0 0 20px rgba(255, 255, 255, 0.4) !important; } 
         .team-ts { border-color: #60a5fa !important; box-shadow: 0 0 20px rgba(127, 29, 29, 0.6) !important; }
 
-        /* --- LİDERLİK TABLOSU (DÜZELTİLDİ) --- */
+        /* --- LİDERLİK TABLOSU --- */
         .leaderboard-header {
             display: grid;
             grid-template-columns: 50px 1fr 80px;
@@ -71,7 +96,7 @@
         }
         .leaderboard-row {
             display: grid;
-            grid-template-columns: 50px 1fr 80px; /* 3 Sütun: Sıra, İsim, Puan */
+            grid-template-columns: 50px 1fr 80px;
             align-items: center;
             background: rgba(255, 255, 255, 0.05);
             margin-bottom: 8px; padding: 10px 15px; border-radius: 12px;
@@ -94,6 +119,11 @@
         .rank-2 .rank-badge { background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #1e293b; }
         .rank-3 .rank-badge { background: linear-gradient(135deg, #fdba74, #b45309); color: #431407; }
         .xp-change { font-size: 0.7em; margin-left: 4px; color: #4ade80; display: inline-block; }
+        
+        #leaderboardList {
+            touch-action: pan-y !important; /* Dikey kaydırmaya izin ver */
+            -webkit-overflow-scrolling: touch; /* iOS için akıcı kaydırma */
+        }
 
         /* --- HAFIZA KARTI --- */
         .memory-grid { 
@@ -141,11 +171,223 @@
         .runner { position: absolute; left: 0; bottom: 5px; font-size: 2.5rem; transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
         .runner-label { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; background: rgba(0,0,0,0.6); padding: 1px 4px; border-radius: 4px; white-space: nowrap; color: #cbd5e1; }
 
-        .match-popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); background: rgba(0,0,0,0.9); border: 4px solid #4ade80; padding: 20px; border-radius: 20px; z-index: 100; text-align: center; pointer-events: none; opacity: 0; transition: all 0.3s; }
+        /* SOCCER STYLES */
+        .soccer-field {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(to bottom, #1e293b 0%, #064e3b 100%);
+            border: 2px solid #a7f3d0;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+        .goal-post {
+            width: 80%;
+            height: 110px;
+            border: 8px solid #e2e8f0;
+            border-bottom: none;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: repeating-linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 20px);
+            box-shadow: 0 0 20px rgba(255,255,255,0.2), inset 0 10px 20px rgba(0,0,0,0.3);
+            z-index: 5;
+        }
+        .soccer-net {
+            position: absolute; inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px);
+            background-size: 10px 10px; opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+        .soccer-net.goal-flash {
+            background-color: rgba(250, 204, 21, 0.3);
+            opacity: 0.8;
+            animation: netShake 0.5s ease-in-out;
+        }
+        @keyframes netShake {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .goalie {
+            font-size: 4.5rem;
+            position: absolute;
+            top: 70px; /* Kalenin içinde */
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
+            z-index: 8; 
+        }
+        .ball-container {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 20px;
+            z-index: 20;
+        }
+        .soccer-ball {
+            width: 70px; height: 70px;
+            background: radial-gradient(circle at 30% 30%, #f8fafc, #cbd5e1);
+            border-radius: 50%;
+            border: 3px solid #1e293b;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: #0f172a; font-size: 1.4rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            cursor: pointer;
+            transition: transform 0.1s;
+            position: relative;
+            z-index: 20;
+        }
+        .soccer-ball::after {
+            content: '⚽'; font-size: 12px; position: absolute; bottom: 5px; opacity: 0.5;
+        }
+        .soccer-ball:active { transform: scale(0.9); }
+        
+        .kicked-anim {
+            transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+            transform: translateY(-220px) scale(0.55) rotate(720deg) !important; /* Mesafe azaltıldı */
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3) !important;
+        }
+        
+        .goal-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            font-size: 5rem; font-weight: 900; color: #facc15; 
+            text-shadow: 0 0 20px #854d0e, 0 0 40px #f59e0b;
+            z-index: 50; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            background: rgba(0,0,0,0.6); padding: 20px 40px; border-radius: 30px;
+            backdrop-filter: blur(5px); border: 4px solid #facc15;
+        }
+        .save-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            font-size: 3.5rem; font-weight: 900; color: #ef4444; 
+            text-shadow: 0 0 20px #7f1d1d;
+            z-index: 50; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none; white-space: nowrap;
+            background: rgba(0,0,0,0.6); padding: 20px 40px; border-radius: 30px;
+            backdrop-filter: blur(5px); border: 4px solid #ef4444;
+        }
+        
+        /* Confetti */
+        .confetti {
+            position: absolute; width: 10px; height: 10px; background: #f00;
+            animation: confetti-fall 1s ease-out forwards; pointer-events: none; z-index: 60;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100px) rotate(720deg); opacity: 0; }
+        }
+
+        /* SNAKE STYLES */
+        #snakeGrid {
+            position: relative;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+            touch-action: none; /* Prevents scroll */
+            margin: 0 auto;
+        }
+        .snake-cell {
+            position: absolute;
+            width: 19px; height: 19px; /* 1px gap visual handled by pos */
+            border-radius: 4px;
+            transition: all 0.05s linear;
+        }
+        .snake-head { background: #4ade80; z-index: 20; box-shadow: 0 0 10px #4ade80; border: 1px solid #bbf7d0; }
+        .snake-body { background: #22c55e; z-index: 10; opacity: 0.8; }
+        .snake-food { 
+            position: absolute; width: 22px; height: 22px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 10px; font-weight: bold; border-radius: 50%; z-index: 15;
+            box-shadow: 0 0 8px currentColor; animation: pulse 1s infinite;
+        }
+
+        /* WHACK-A-MOLE STYLES */
+        #whackGrid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .crater {
+            width: 100%;
+            aspect-ratio: 1;
+            background: radial-gradient(circle at 50% 100%, #1e293b, #0f172a);
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            border: 4px solid #334155;
+            box-shadow: inset 0 10px 15px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.05);
+        }
+        .crater::after { /* Crater bottom shadow for depth */
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 30%;
+            background: linear-gradient(to top, #020617, transparent); pointer-events: none; z-index: 5;
+        }
+        .mole {
+            position: absolute;
+            bottom: -110%; /* Hidden inside crater */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            transition: bottom 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2;
+            cursor: pointer;
+        }
+        .mole.up {
+            bottom: -10%;
+        }
+        .mole-body {
+            font-size: 3.5rem;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            position: relative;
+            z-index: 2;
+        }
+        .mole-number-board {
+            background: #fcd34d;
+            color: #451a03;
+            font-weight: 800;
+            font-size: 1.2rem;
+            padding: 2px 10px;
+            border-radius: 8px;
+            border: 2px solid #b45309;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, 0%);
+            z-index: 3;
+            white-space: nowrap;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* POPUP GENEL - YUKARI TAŞINDI (top: 15%) */
+        .match-popup { position: fixed; top: 15%; left: 50%; transform: translate(-50%, -50%) scale(0); background: rgba(0,0,0,0.9); border: 4px solid #4ade80; padding: 20px; border-radius: 20px; z-index: 2000; text-align: center; pointer-events: none; opacity: 0; transition: all 0.3s; }
         .match-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+
         #deathOverlay { position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); display: flex; flex-col; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         #deathOverlay.show { opacity: 1; pointer-events: auto; }
         #loadingOverlay { position: fixed; inset: 0; z-index: 1000; background: #0f172a; display: flex; flex-col; align-items: center; justify-content: center; transition: opacity 0.5s; }
+        
+        /* Scrollbar styles for leaderboard */
+        #leaderboardList::-webkit-scrollbar { width: 4px; }
+        #leaderboardList::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
+        
         #avatarGridContainer::-webkit-scrollbar { width: 4px; }
         #avatarGridContainer::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
         .avatar-option-btn:hover { transform: scale(1.1); box-shadow: 0 0 15px rgba(255,255,255,0.2); }
@@ -169,6 +411,12 @@
 
     <div class="space-bg" id="starContainer"></div>
     <div id="damageFlash" class="damage-flash"></div>
+    
+    <!-- GLOBAL POPUP -->
+    <div id="memPopup" class="match-popup">
+        <div class="text-green-400 font-bold text-sm uppercase mb-1">Harika!</div>
+        <div class="text-4xl font-bold text-white whitespace-nowrap" id="memPopupText">3 x 5 = 15</div>
+    </div>
 
     <div id="loadingOverlay">
         <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -242,30 +490,40 @@
         </div>
 
         <div id="gameCenterScreen" class="hidden glass-panel p-6 max-w-md w-full text-center slide-up relative">
-            <button onclick="window.backToMenu()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition z-10">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <button onclick="window.backToMenu()" class="close-btn">✕</button>
             <h2 class="text-2xl font-bold mb-4 text-blue-300 mt-2">Görev Seçimi</h2>
-            <div class="grid grid-cols-1 gap-3">
-                <button onclick="window.prepareGame('racePre')" class="bg-gradient-to-r from-indigo-600 to-purple-700 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex items-center gap-4 group border border-indigo-500/30">
-                    <div class="text-3xl bg-black/20 p-2 rounded-xl">👽</div>
-                    <div><div class="font-bold text-base">Uzaylı Yarışı</div><div class="text-[10px] text-indigo-200">Hızlı çöz, uzaylıyı geç!</div></div>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="window.prepareGame('soccer')" class="bg-gradient-to-br from-green-600 to-teal-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex flex-col items-center justify-center gap-2 group border border-green-500/30 h-28">
+                    <div class="text-4xl bg-black/20 p-2 rounded-xl">⚽</div>
+                    <div class="font-bold text-sm">Uzay Futbolu</div>
                 </button>
-                <button onclick="window.prepareGame('quiz')" class="bg-gradient-to-r from-green-600 to-emerald-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex items-center gap-4 group border border-green-500/30">
-                    <div class="text-3xl bg-black/20 p-2 rounded-xl">⏱️</div>
-                    <div><div class="font-bold text-base">Hızlı Test</div><div class="text-[10px] text-green-200">Zamana karşı soruları çöz!</div></div>
+                <button onclick="window.prepareGame('whack')" class="bg-gradient-to-br from-pink-600 to-rose-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex flex-col items-center justify-center gap-2 group border border-pink-500/30 h-28">
+                     <div class="text-4xl bg-black/20 p-2 rounded-xl">🔨</div>
+                     <div class="font-bold text-sm">Köstebek</div>
                 </button>
-                <button onclick="window.prepareGame('rocketOps')" class="bg-gradient-to-r from-orange-600 to-red-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex items-center gap-4 group border border-orange-500/30">
-                    <div class="text-3xl bg-black/20 p-2 rounded-xl">🚀</div>
-                    <div><div class="font-bold text-base">Roket Operasyonu</div><div class="text-[10px] text-orange-200">Göktaşlarını lazerle patlat!</div></div>
+                <button onclick="window.prepareGame('snake')" class="bg-gradient-to-br from-teal-600 to-emerald-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex flex-col items-center justify-center gap-2 group border border-teal-500/30 h-28">
+                    <div class="text-4xl bg-black/20 p-2 rounded-xl">🐍</div>
+                    <div class="font-bold text-sm">Uzay Yılanı</div>
                 </button>
-                <button onclick="window.prepareGame('energy')" class="bg-gradient-to-r from-cyan-600 to-blue-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex items-center gap-4 group border border-cyan-500/30">
-                    <div class="text-3xl bg-black/20 p-2 rounded-xl">⚡</div>
-                    <div><div class="font-bold text-base">Enerji Avı</div><div class="text-[10px] text-cyan-200">Doğru enerji küresini yakala!</div></div>
+                <button onclick="window.prepareGame('racePre')" class="bg-gradient-to-br from-indigo-600 to-purple-700 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex flex-col items-center justify-center gap-2 group border border-indigo-500/30 h-28">
+                    <div class="text-4xl bg-black/20 p-2 rounded-xl">👽</div>
+                    <div class="font-bold text-sm">Uzaylı Yarışı</div>
                 </button>
-                <button onclick="window.prepareGame('memory')" class="bg-gradient-to-r from-purple-600 to-pink-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex items-center gap-4 group border border-purple-500/30">
-                    <div class="text-3xl bg-black/20 p-2 rounded-xl">🧩</div>
-                    <div><div class="font-bold text-base">Hafıza Kartları</div><div class="text-[10px] text-purple-200">Kartları eşleştir.</div></div>
+                <button onclick="window.prepareGame('quiz')" class="bg-gradient-to-br from-cyan-600 to-blue-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex flex-col items-center justify-center gap-2 group border border-cyan-500/30 h-28">
+                    <div class="text-4xl bg-black/20 p-2 rounded-xl">⏱️</div>
+                    <div class="font-bold text-sm">Hızlı Test</div>
+                </button>
+                <button onclick="window.prepareGame('rocketOps')" class="bg-gradient-to-br from-orange-600 to-red-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex flex-col items-center justify-center gap-2 group border border-orange-500/30 h-28">
+                    <div class="text-4xl bg-black/20 p-2 rounded-xl">🚀</div>
+                    <div class="font-bold text-sm">Roket Ops</div>
+                </button>
+                <button onclick="window.prepareGame('energy')" class="bg-gradient-to-br from-blue-600 to-indigo-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex flex-col items-center justify-center gap-2 group border border-blue-500/30 h-28">
+                    <div class="text-4xl bg-black/20 p-2 rounded-xl">⚡</div>
+                    <div class="font-bold text-sm">Enerji Avı</div>
+                </button>
+                <button onclick="window.prepareGame('memory')" class="bg-gradient-to-br from-purple-600 to-pink-800 p-3 rounded-2xl text-left relative overflow-hidden btn-press flex flex-col items-center justify-center gap-2 group border border-purple-500/30 h-28">
+                    <div class="text-4xl bg-black/20 p-2 rounded-xl">🧩</div>
+                    <div class="font-bold text-sm">Hafıza</div>
                 </button>
             </div>
             <button onclick="window.openLeaderboard()" class="w-full mt-4 bg-white/5 hover:bg-white/10 border border-yellow-500/30 p-3 rounded-2xl flex items-center justify-center gap-3 transition">
@@ -275,9 +533,7 @@
         </div>
 
         <div id="leaderboardScreen" class="hidden glass-panel p-6 max-w-md w-full slide-up relative h-[70vh] flex flex-col">
-            <button onclick="window.goToGameCenter()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition z-10">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <button onclick="window.goToGameCenter()" class="close-btn">✕</button>
             <h2 class="text-xl font-bold mb-4 text-yellow-400 mt-2 text-center">Haftanın Pilotları</h2>
             <div class="leaderboard-header"><span>Sıra</span><span>Pilot</span><span class="text-right">TP</span></div>
             <div id="leaderboardList" class="flex-1 overflow-y-auto pr-1"></div>
@@ -285,7 +541,7 @@
         </div>
 
         <div id="raceDifficultyScreen" class="hidden glass-panel p-6 max-w-md w-full text-center slide-up relative">
-            <button onclick="window.goToGameCenter()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            <button onclick="window.goToGameCenter()" class="close-btn">✕</button>
             <h2 class="text-2xl font-bold mb-6 text-indigo-300">Zorluk Seviyesi</h2>
             <div class="grid gap-4">
                 <button onclick="window.startRaceGame('easy')" class="bg-green-600/30 hover:bg-green-600/50 border border-green-500/50 p-4 rounded-xl flex items-center justify-between group transition">
@@ -301,7 +557,7 @@
         </div>
 
         <div id="levelSelectScreen" class="hidden glass-panel p-6 max-w-md w-full text-center slide-up relative">
-            <button onclick="window.goToGameCenter()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            <button onclick="window.goToGameCenter()" class="close-btn">✕</button>
             <h2 class="text-xl font-bold mb-2 text-white mt-2">Hangi Sayılarla Oynayalım?</h2>
             <div class="grid grid-cols-5 gap-3 mb-6" id="levelGrid"></div>
             <div class="flex gap-3 mb-6">
@@ -311,77 +567,152 @@
             <button onclick="window.launchSelectedGame()" id="launchBtn" disabled class="w-full bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg btn-press text-lg">BAŞLAT 🚀</button>
         </div>
 
-        <div id="raceGameScreen" class="hidden w-full max-w-lg flex flex-col items-center">
-            <div class="w-full bg-black/40 p-3 rounded-2xl backdrop-blur-md border border-white/10 mb-4">
-                <div class="flex justify-between items-end mb-2 px-2">
-                    <div class="text-yellow-400 font-bold tracking-widest text-sm">YARIŞ PİSTİ</div>
-                    <div class="text-[10px] text-gray-400 uppercase tracking-widest" id="raceDiffBadge">Zorluk: KOLAY</div>
+        <!-- YENİ OYUN: SOCCER -->
+        <div id="soccerGameScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
+            <button onclick="window.quitGame()" class="close-btn">✕</button>
+            
+            <div class="game-container-spacing">
+                <div class="w-full bg-slate-900/90 p-3 rounded-2xl flex justify-between items-center border border-white/10 z-20 shadow-lg mb-4">
+                    <div class="text-left"><div class="text-[10px] text-gray-400 block">SKOR</div><div class="text-xl font-bold text-green-400" id="soccerScore">0</div></div>
+                    <div class="font-bold text-white bg-green-700 px-4 py-1 rounded-lg shadow-inner text-xl tracking-wider border border-green-500" id="soccerQuestion">? x ?</div>
+                    <div class="hearts-container" id="soccerLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
                 </div>
-                <div class="race-track-container">
-                    <div class="race-lane"><div class="finish-line"></div><div id="playerRunner" class="runner"><span id="playerRunnerIcon">👨‍🚀</span><div class="runner-label" id="playerRunnerName">Sen</div></div></div>
-                    <div class="race-lane"><div class="finish-line"></div><div id="botRunner" class="runner"><span id="botRunnerIcon">👽</span><div class="runner-label text-red-300" id="botRunnerName">Uzaylı</div></div></div>
+                
+                <div class="soccer-field" id="soccerField">
+                    <div class="goal-post">
+                        <div class="soccer-net" id="soccerNet"></div>
+                    </div>
+                    <div class="goalie" id="soccerGoalie">👾</div>
+                    <div class="goal-overlay" id="goalMsg">GOL!</div>
+                    <div class="save-overlay" id="saveMsg">KURTARDI!</div>
+
+                    <div class="ball-container">
+                        <div class="soccer-ball" onclick="window.handleKick(0)" id="ball0"></div>
+                        <div class="soccer-ball" onclick="window.handleKick(1)" id="ball1"></div>
+                        <div class="soccer-ball" onclick="window.handleKick(2)" id="ball2"></div>
+                    </div>
                 </div>
             </div>
-            <div class="w-full bg-gradient-to-br from-indigo-900 to-slate-900 border-2 border-indigo-500/50 p-6 rounded-3xl text-center mb-6 shadow-2xl relative overflow-hidden">
-                <div class="text-6xl font-bold text-white tracking-wider drop-shadow-lg"><span id="rNum1">?</span> × <span id="rNum2">?</span> = <span class="text-yellow-400">?</span></div>
-            </div>
-            <div class="grid grid-cols-2 gap-4 w-full" id="raceOptions"></div>
-            <button onclick="window.quitGame()" class="mt-8 text-white/30 text-xs hover:text-white">Pes Et</button>
         </div>
 
-        <div id="quizGameScreen" class="hidden w-full max-w-lg flex flex-col items-center">
-            <div class="w-full flex justify-between items-center mb-4 px-4 bg-black/40 p-3 rounded-2xl backdrop-blur-md border border-white/10">
-                <div class="text-left"><div class="text-[10px] text-gray-400 tracking-wider">PUAN</div><div class="text-2xl font-bold text-yellow-400" id="quizScore">0</div></div>
-                <div class="hearts-container" id="quizLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
-                <div class="text-center w-1/4"><div class="text-[10px] text-gray-400 tracking-wider">SÜRE</div><div class="text-xl font-bold text-white" id="quizTime">10.0</div></div>
+        <div id="raceGameScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
+            <button onclick="window.quitGame()" class="close-btn">✕</button>
+            <div class="game-container-spacing">
+                <div class="w-full bg-black/40 p-3 rounded-2xl backdrop-blur-md border border-white/10 mb-4">
+                    <div class="flex justify-between items-end mb-2 px-2">
+                        <div class="text-yellow-400 font-bold tracking-widest text-sm">YARIŞ PİSTİ</div>
+                        <div class="text-[10px] text-gray-400 uppercase tracking-widest" id="raceDiffBadge">Zorluk: KOLAY</div>
+                    </div>
+                    <div class="race-track-container">
+                        <div class="race-lane"><div class="finish-line"></div><div id="playerRunner" class="runner"><span id="playerRunnerIcon">👨‍🚀</span><div class="runner-label" id="playerRunnerName">Sen</div></div></div>
+                        <div class="race-lane"><div class="finish-line"></div><div id="botRunner" class="runner"><span id="botRunnerIcon">👽</span><div class="runner-label text-red-300" id="botRunnerName">Uzaylı</div></div></div>
+                    </div>
+                </div>
+                <div class="w-full bg-gradient-to-br from-indigo-900 to-slate-900 border-2 border-indigo-500/50 p-6 rounded-3xl text-center mb-6 shadow-2xl relative overflow-hidden">
+                    <div class="text-6xl font-bold text-white tracking-wider drop-shadow-lg"><span id="rNum1">?</span> × <span id="rNum2">?</span> = <span class="text-yellow-400">?</span></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 w-full" id="raceOptions"></div>
             </div>
-            <div class="w-full bg-gradient-to-br from-blue-900 to-slate-900 border-2 border-blue-500/50 p-8 rounded-3xl text-center mb-6 shadow-2xl relative overflow-hidden">
-                <div class="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
-                <div class="relative z-10"><div class="text-sm text-blue-200 mb-2 uppercase tracking-widest">Soru</div><div class="text-6xl font-bold text-white tracking-wider drop-shadow-lg"><span id="qNum1">?</span> × <span id="qNum2">?</span> = <span class="text-yellow-400">?</span></div></div>
+        </div>
+
+        <div id="quizGameScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
+            <button onclick="window.quitGame()" class="close-btn">✕</button>
+            <div class="game-container-spacing">
+                <div class="w-full flex justify-between items-center mb-4 px-4 bg-black/40 p-3 rounded-2xl backdrop-blur-md border border-white/10">
+                    <div class="text-left"><div class="text-[10px] text-gray-400 tracking-wider">PUAN</div><div class="text-2xl font-bold text-yellow-400" id="quizScore">0</div></div>
+                    <div class="hearts-container" id="quizLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
+                    <div class="text-center w-1/4"><div class="text-[10px] text-gray-400 tracking-wider">SÜRE</div><div class="text-xl font-bold text-white" id="quizTime">10.0</div></div>
+                </div>
+                <div class="w-full bg-gradient-to-br from-blue-900 to-slate-900 border-2 border-blue-500/50 p-8 rounded-3xl text-center mb-6 shadow-2xl relative overflow-hidden">
+                    <div class="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                    <div class="relative z-10"><div class="text-sm text-blue-200 mb-2 uppercase tracking-widest">Soru</div><div class="text-6xl font-bold text-white tracking-wider drop-shadow-lg"><span id="qNum1">?</span> × <span id="qNum2">?</span> = <span class="text-yellow-400">?</span></div></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 w-full" id="quizOptions"></div>
             </div>
-            <div class="grid grid-cols-2 gap-4 w-full" id="quizOptions"></div>
-            <button onclick="window.quitGame()" class="mt-8 text-white/30 text-xs hover:text-white">Çıkış Yap</button>
         </div>
 
         <div id="rocketOpsScreen" class="hidden w-full max-w-lg flex flex-col items-center relative h-[80vh]">
-            <div class="absolute top-0 w-full flex justify-center z-30">
-                 <div class="bg-black/60 backdrop-blur-md px-4 py-2 rounded-b-xl border border-white/10 flex gap-6 shadow-xl items-center">
-                     <div class="text-center"><span class="text-[10px] text-gray-400 block">HEDEF</span><span id="opsTarget" class="text-2xl font-bold text-blue-300">? x ?</span></div>
-                     <div class="hearts-container" id="opsLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
-                     <div class="text-center"><span class="text-[10px] text-gray-400 block">SKOR</span><span id="opsScore" class="text-2xl font-bold text-yellow-400">0</span></div>
-                 </div>
+            <button onclick="window.quitGame()" class="close-btn" style="top: 20px;">✕</button>
+            <div class="game-container-spacing">
+                <div class="w-full flex justify-center z-30">
+                     <div class="bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex gap-6 shadow-xl items-center">
+                         <div class="text-center"><span class="text-[10px] text-gray-400 block">HEDEF</span><span id="opsTarget" class="text-2xl font-bold text-blue-300">? x ?</span></div>
+                         <div class="hearts-container" id="opsLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
+                         <div class="text-center"><span class="text-[10px] text-gray-400 block">SKOR</span><span id="opsScore" class="text-2xl font-bold text-yellow-400">0</span></div>
+                     </div>
+                </div>
+                <div class="flex-1 w-full relative mt-8 ops-area h-[60vh]" id="opsGameArea">
+                    <div id="opsAsteroidContainer" class="w-full flex flex-wrap justify-around px-2 absolute top-10 gap-4"></div>
+                    <div id="opsPlayerRocket">🚀</div>
+                </div>
             </div>
-            <div class="flex-1 w-full relative mt-16 ops-area" id="opsGameArea">
-                <div id="opsAsteroidContainer" class="w-full flex flex-wrap justify-around px-2 absolute top-10 gap-4"></div>
-                <div id="opsPlayerRocket">🚀</div>
-            </div>
-            <button onclick="window.quitGame()" class="absolute bottom-0 text-white/30 text-xs z-30">Çıkış</button>
         </div>
 
         <div id="energyScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
-            <div class="w-full bg-slate-900/90 p-3 rounded-t-xl flex justify-between items-center border-b border-white/10 z-20 shadow-lg">
-                <div class="text-xl font-bold text-cyan-400 px-2" id="energyScore">0</div>
-                <div class="hearts-container" id="energyLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
-                <div class="font-bold text-white bg-blue-600 px-4 py-1 rounded-lg shadow-inner text-xl tracking-wider border border-blue-400" id="energyQuestion">? x ?</div>
+            <button onclick="window.quitGame()" class="close-btn">✕</button>
+            <div class="game-container-spacing">
+                <div class="w-full bg-slate-900/90 p-3 rounded-t-xl flex justify-between items-center border-b border-white/10 z-20 shadow-lg">
+                    <div class="text-xl font-bold text-cyan-400 px-2" id="energyScore">0</div>
+                    <div class="hearts-container" id="energyLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
+                    <div class="font-bold text-white bg-blue-600 px-4 py-1 rounded-lg shadow-inner text-xl tracking-wider border border-blue-400" id="energyQuestion">? x ?</div>
+                </div>
+                <div id="energyGameArea"><div id="energyShip">🚀</div></div>
+                <div class="flex w-full gap-3 mt-3 h-24 z-20">
+                    <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" onpointerdown="window.moveEnergyShip('left')">⬅️</button>
+                    <div class="flex flex-col justify-center items-center text-xs text-white/30"><span>Sürükle</span><span>↔️</span></div>
+                    <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" onpointerdown="window.moveEnergyShip('right')">➡️</button>
+                </div>
             </div>
-            <div id="energyGameArea"><div id="energyShip">🚀</div></div>
-            <div class="flex w-full gap-3 mt-3 h-24 z-20">
-                <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" onpointerdown="window.moveEnergyShip('left')">⬅️</button>
-                <div class="flex flex-col justify-center items-center text-xs text-white/30"><span>Sürükle</span><span>↔️</span></div>
-                <button class="flex-1 bg-white/10 rounded-2xl active:bg-white/30 text-4xl border border-white/10 hover:bg-white/20 transition" onpointerdown="window.moveEnergyShip('right')">➡️</button>
-            </div>
-            <button onclick="window.quitGame()" class="mt-4 text-white/30 text-xs">Çıkış</button>
         </div>
 
         <div id="memoryGameScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
-            <div id="memPopup" class="match-popup"><div class="text-green-400 font-bold text-sm uppercase mb-1">Harika!</div><div class="text-4xl font-bold text-white whitespace-nowrap" id="memPopupText">3 x 5 = 15</div></div>
-             <div class="w-full flex justify-between mb-4 px-2 bg-black/30 p-2 rounded-lg">
-                <span class="text-sm text-blue-200 font-bold">Kalan: <span id="memPairsLeft" class="text-white">?</span></span>
-                <span class="text-sm text-purple-200 font-bold">Hamle: <span id="memMoves" class="text-white">0</span></span>
+             <button onclick="window.quitGame()" class="close-btn">✕</button>
+             <div class="game-container-spacing">
+                 <div class="w-full flex justify-between mb-4 px-2 bg-black/30 p-2 rounded-lg">
+                    <span class="text-sm text-blue-200 font-bold">Kalan: <span id="memPairsLeft" class="text-white">?</span></span>
+                    <span class="text-sm text-purple-200 font-bold">Hamle: <span id="memMoves" class="text-white">0</span></span>
+                </div>
+                <div class="memory-grid w-full" id="memoryGrid"></div>
             </div>
-            <div class="memory-grid w-full" id="memoryGrid"></div>
-            <button onclick="window.quitGame()" class="mt-8 text-white/30 text-xs">Çıkış</button>
         </div>
+
+        <div id="snakeGameScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
+            <button onclick="window.quitGame()" class="close-btn">✕</button>
+            <div class="game-container-spacing">
+                <div class="w-full bg-slate-900/90 p-3 rounded-2xl flex justify-between items-center border border-white/10 z-20 shadow-lg mb-4">
+                    <div class="text-left"><div class="text-[10px] text-gray-400 block">SKOR</div><div class="text-xl font-bold text-teal-400" id="snakeScore">0</div></div>
+                    <div class="font-bold text-white bg-teal-600 px-4 py-1 rounded-lg shadow-inner text-xl tracking-wider border border-teal-400" id="snakeQuestion">? x ?</div>
+                    <div class="hearts-container" id="snakeLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
+                </div>
+                
+                <div id="snakeGrid" class="w-[300px] h-[300px] sm:w-[340px] sm:h-[340px] relative shadow-2xl"></div>
+                
+                <div class="text-center text-white/40 text-xs mt-4 animate-pulse">
+                    Yönlendirmek için ok tuşlarını kullan ⌨️<br>veya ekranda parmağınla kaydır 👆
+                </div>
+            </div>
+        </div>
+
+        <!-- WHACK-A-MOLE SCREEN -->
+        <div id="whackGameScreen" class="hidden w-full max-w-lg flex flex-col items-center relative">
+            <button onclick="window.quitGame()" class="close-btn">✕</button>
+            <div class="game-container-spacing">
+                <div class="w-full bg-slate-900/90 p-3 rounded-2xl flex justify-between items-center border border-white/10 z-20 shadow-lg mb-4">
+                    <div class="text-left"><div class="text-[10px] text-gray-400 block">SKOR</div><div class="text-xl font-bold text-pink-400" id="whackScore">0</div></div>
+                    <div class="font-bold text-white bg-pink-600 px-4 py-1 rounded-lg shadow-inner text-xl tracking-wider border border-pink-400" id="whackQuestion">? x ?</div>
+                    <div class="hearts-container" id="whackLives"><span class="heart-icon">♥</span><span class="heart-icon">♥</span><span class="heart-icon">♥</span></div>
+                </div>
+                
+                <div id="whackGrid">
+                    <!-- Holes generated via JS -->
+                </div>
+                
+                <div class="text-center text-white/40 text-xs mt-4">
+                    Doğru cevabı tutan uzaylıya dokun!
+                </div>
+            </div>
+        </div>
+
 
         <div id="gameOverScreen" class="hidden absolute inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-6 backdrop-blur-md fixed h-full w-full">
             <div class="text-8xl mb-6 animate-bounce" id="gameOverIcon">🏆</div>
@@ -397,7 +728,7 @@
         </div>
 
         <div id="studyMenuScreen" class="hidden glass-panel p-6 max-w-2xl w-full text-center slide-up relative h-[70vh] flex flex-col">
-            <button onclick="window.backToMenu()" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 p-1 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            <button onclick="window.backToMenu()" class="close-btn">✕</button>
             <h2 class="text-xl font-bold mb-4 text-purple-300 mt-2">Çarpım Tablosu</h2>
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 overflow-y-auto pr-1 pb-4 content-start" id="studyButtonsGrid"></div>
         </div>
@@ -496,6 +827,7 @@
             else if (type === 'laser') { osc.type='triangle'; osc.frequency.setValueAtTime(800,now); osc.frequency.exponentialRampToValueAtTime(100,now+0.2); gain.gain.setValueAtTime(0.1,now); gain.gain.linearRampToValueAtTime(0,now+0.2); osc.start(now); osc.stop(now+0.2); }
             else if (type === 'boom') { osc.type='square'; osc.frequency.setValueAtTime(100,now); gain.gain.exponentialRampToValueAtTime(0.01,now+0.4); osc.start(now); osc.stop(now+0.4); }
             else if (type === 'hurt') { osc.type='sawtooth'; osc.frequency.setValueAtTime(100,now); osc.frequency.linearRampToValueAtTime(50,now+0.2); gain.gain.setValueAtTime(0.2,now); gain.gain.linearRampToValueAtTime(0,now+0.2); osc.start(now); osc.stop(now+0.2); }
+            else if (type === 'whistle') { osc.frequency.setValueAtTime(1500, now); osc.frequency.linearRampToValueAtTime(1000, now+0.1); gain.gain.setValueAtTime(0.2,now); gain.gain.linearRampToValueAtTime(0,now+0.3); osc.start(now); osc.stop(now+0.3); }
         }
 
         function createStars() {
@@ -512,6 +844,27 @@
             exp.style.left = x + 'px'; exp.style.top = y + 'px'; 
             document.body.appendChild(exp); 
             setTimeout(() => exp.remove(), 500);
+        }
+        
+        function createConfetti() {
+            const field = document.getElementById('soccerField');
+            if(!field) return;
+            const colors = ['#ef4444', '#3b82f6', '#f59e0b', '#22c55e', '#a855f7'];
+            
+            for(let i=0; i<30; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.background = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = 20 + Math.random() * 60 + '%'; // Center area
+                c.style.top = '10%';
+                c.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                // Random delays
+                c.style.animationDelay = Math.random() * 0.3 + 's';
+                
+                field.appendChild(c);
+                setTimeout(() => c.remove(), 1200);
+            }
         }
 
         async function initAuth() {
@@ -664,6 +1017,8 @@
         let activeGameMode = "";
         let gameTimer = null;
         let raceBotInterval = null;
+        let snakeGameInterval = null;
+        let whackGameInterval = null;
         let isGameActive = false;
         let currentSessionXP = 0;
         let currentLives = 3;
@@ -703,6 +1058,10 @@
             if (currentLives <= 0) { playerDeathSequence(0, correctAnswerText); }
         }
 
+        // Global variables for touch handling
+        let sTouchX = 0;
+        let sTouchY = 0;
+
         window.initGame = () => {
              createStars();
              const grid = document.getElementById('levelGrid');
@@ -712,6 +1071,7 @@
              }
              window.initStudyMenu(); 
              
+             // Energy Controls
              const eGameArea = document.getElementById('energyGameArea');
              let touchStartX = 0;
              eGameArea.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, {passive: false});
@@ -722,6 +1082,60 @@
                  if(diffX > 30) { window.moveEnergyShip('right'); touchStartX = currentX; } 
                  else if (diffX < -30) { window.moveEnergyShip('left'); touchStartX = currentX; }
              }, {passive: false});
+             
+             // --- SNAKE CONTROLS (GLOBAL) ---
+             document.addEventListener('touchstart', (e) => {
+                 if(activeGameMode !== 'snake') return;
+                 sTouchX = e.touches[0].clientX; 
+                 sTouchY = e.touches[0].clientY;
+             }, {passive: false});
+
+             document.addEventListener('touchmove', (e) => { 
+                 if(activeGameMode === 'snake') {
+                     e.preventDefault(); // Stop scrolling while playing snake
+                 }
+             }, {passive: false}); 
+
+             document.addEventListener('touchend', (e) => {
+                 if(!isGameActive || activeGameMode !== 'snake') return;
+                 
+                 const dx = e.changedTouches[0].clientX - sTouchX;
+                 const dy = e.changedTouches[0].clientY - sTouchY;
+                 
+                 // Swipe detection threshold
+                 if(Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+                     if(Math.abs(dx) > Math.abs(dy)) {
+                         // Horizontal
+                         window.changeSnakeDir(dx > 0 ? 'right' : 'left');
+                     } else {
+                         // Vertical
+                         window.changeSnakeDir(dy > 0 ? 'down' : 'up');
+                     }
+                 }
+             }, {passive: false});
+             
+             // --- KEYBOARD CONTROLS (ADDED) ---
+             document.addEventListener('keydown', (e) => {
+                 if(!isGameActive) return;
+                 
+                 if(activeGameMode === 'snake') {
+                     // Prevent default scrolling for arrow keys
+                     if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                         e.preventDefault();
+                         const dirMap = { 
+                             'ArrowUp': 'up', 
+                             'ArrowDown': 'down', 
+                             'ArrowLeft': 'left', 
+                             'ArrowRight': 'right' 
+                         };
+                         window.changeSnakeDir(dirMap[e.key]);
+                     }
+                 }
+                 else if(activeGameMode === 'energy') {
+                     if(e.key === 'ArrowLeft') { window.moveEnergyShip('left'); }
+                     if(e.key === 'ArrowRight') { window.moveEnergyShip('right'); }
+                 }
+             });
 
              initAuth();
              document.body.classList.remove('game-mode');
@@ -747,13 +1161,15 @@
         function clearAllIntervals() {
             clearInterval(gameTimer);
             clearInterval(raceBotInterval);
+            clearInterval(snakeGameInterval);
+            clearInterval(whackGameInterval);
             activeEnergyIntervals.forEach(i => clearInterval(i));
             activeEnergyIntervals = [];
             document.querySelectorAll('.energy-orb').forEach(m => m.remove());
         }
 
         function hideAll() { 
-            const screens = ['startScreen', 'gameCenterScreen', 'leaderboardScreen', 'levelSelectScreen', 'quizGameScreen', 'rocketOpsScreen', 'energyScreen', 'memoryGameScreen', 'gameOverScreen', 'studyMenuScreen', 'studyDetailScreen', 'raceGameScreen', 'raceDifficultyScreen'];
+            const screens = ['startScreen', 'gameCenterScreen', 'leaderboardScreen', 'levelSelectScreen', 'quizGameScreen', 'rocketOpsScreen', 'energyScreen', 'memoryGameScreen', 'gameOverScreen', 'studyMenuScreen', 'studyDetailScreen', 'raceGameScreen', 'raceDifficultyScreen', 'snakeGameScreen', 'whackGameScreen', 'soccerGameScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.classList.add('hidden');
@@ -798,6 +1214,9 @@
             else if(activeGameMode === 'energy') startEnergyGame();
             else if(activeGameMode === 'rocketOps') startRocketOpsGame();
             else if(activeGameMode === 'race') initRaceLogic();
+            else if(activeGameMode === 'snake') startSnakeGame();
+            else if(activeGameMode === 'whack') startWhackGame();
+            else if(activeGameMode === 'soccer') startSoccerGame();
         }
 
         window.quitGame = () => { 
@@ -1075,6 +1494,474 @@
             });
         }
 
+        /* --- SNAKE GAME LOGIC --- */
+        let snakeHead = { x: 5, y: 5 };
+        let snakeBody = [{ x: 5, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }];
+        let snakeDir = 'right';
+        let snakeNextDir = 'right';
+        let snakeFoodItems = []; // {x, y, val, el}
+        let snakeTargetAns = 0;
+        let snakeScoreVal = 0;
+        let snakeGridSize = 15; // 15x15 grid
+        let snakeCellSize = 20; // px
+        let snakeN1 = 0;
+        let snakeN2 = 0;
+        let isSnakeInvulnerable = false; // Cooldown for tail hit
+        
+        function startSnakeGame() {
+            isGameActive = true;
+            document.getElementById('snakeGameScreen').classList.remove('hidden');
+            snakeScoreVal = 0; document.getElementById('snakeScore').textContent = '0';
+            
+            // Calculate grid size based on container width
+            const container = document.getElementById('snakeGrid');
+            const cw = container.clientWidth;
+            snakeGridSize = 15;
+            snakeCellSize = cw / snakeGridSize;
+            
+            snakeHead = { x: 7, y: 7 };
+            snakeBody = [{ x: 7, y: 7 }, { x: 6, y: 7 }, { x: 5, y: 7 }];
+            snakeDir = 'right';
+            snakeNextDir = 'right';
+            isSnakeInvulnerable = false;
+            
+            spawnSnakeFoodWave();
+            renderSnake();
+            
+            clearInterval(snakeGameInterval);
+            snakeGameInterval = setInterval(snakeGameLoop, 250); // Slower speed (250ms)
+        }
+        
+        window.changeSnakeDir = (dir) => {
+            const opp = { 'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left' };
+            if (dir !== opp[snakeDir]) {
+                snakeNextDir = dir;
+            }
+        };
+        
+        function spawnSnakeFoodWave() {
+            // Clear old food
+            snakeFoodItems.forEach(item => item.el.remove());
+            snakeFoodItems = [];
+            
+            const n1 = Math.floor(Math.random() * 10) + 1;
+            const nums = Array.from(selectedNumbers);
+            const n2 = nums.length > 0 ? nums[Math.floor(Math.random() * nums.length)] : Math.floor(Math.random() * 9) + 2;
+            snakeN1 = n1; snakeN2 = n2;
+            snakeTargetAns = n1 * n2;
+            document.getElementById('snakeQuestion').textContent = `${n1} x ${n2}`;
+            
+            // 1 Correct, 2 Wrong
+            let options = [snakeTargetAns];
+            while (options.length < 3) {
+                let f = snakeTargetAns + (Math.floor(Math.random() * 10) - 5);
+                if (f > 0 && f !== snakeTargetAns && !options.includes(f)) options.push(f);
+            }
+            options.sort(() => Math.random() - 0.5);
+            
+            const gridEl = document.getElementById('snakeGrid');
+            
+            options.forEach(val => {
+                let pos;
+                let valid = false;
+                while (!valid) {
+                    pos = { x: Math.floor(Math.random() * snakeGridSize), y: Math.floor(Math.random() * snakeGridSize) };
+                    // Check collision with snake
+                    valid = true;
+                    if (snakeBody.some(b => b.x === pos.x && b.y === pos.y)) valid = false;
+                    // Check collision with other food
+                    if (snakeFoodItems.some(f => f.x === pos.x && f.y === pos.y)) valid = false;
+                }
+                
+                const el = document.createElement('div');
+                el.className = 'snake-food';
+                el.textContent = val;
+                el.style.left = (pos.x * snakeCellSize) + 'px';
+                el.style.top = (pos.y * snakeCellSize) + 'px';
+                el.style.width = snakeCellSize + 'px';
+                el.style.height = snakeCellSize + 'px';
+                
+                // UNIFIED COLOR FOR ALL ANSWERS
+                el.style.background = '#fbbf24'; 
+                el.style.color = '#451a03';
+                
+                gridEl.appendChild(el);
+                snakeFoodItems.push({ x: pos.x, y: pos.y, val: val, el: el });
+            });
+        }
+        
+        function snakeGameLoop() {
+            if (!isGameActive) return;
+            
+            snakeDir = snakeNextDir;
+            let nx = snakeHead.x;
+            let ny = snakeHead.y;
+            
+            if (snakeDir === 'right') nx++;
+            else if (snakeDir === 'left') nx--;
+            else if (snakeDir === 'up') ny--;
+            else if (snakeDir === 'down') ny++;
+            
+            // Wall Wrapping (Teleport to other side)
+            if (nx < 0) nx = snakeGridSize - 1;
+            else if (nx >= snakeGridSize) nx = 0;
+            
+            if (ny < 0) ny = snakeGridSize - 1;
+            else if (ny >= snakeGridSize) ny = 0;
+            
+            // Self Collision - Lose Life but Pass Through
+            if (snakeBody.some(b => b.x === nx && b.y === ny)) {
+                if(!isSnakeInvulnerable) {
+                    takeDamage("Kendine çarptın!");
+                    isSnakeInvulnerable = true;
+                    // Flash red
+                    document.getElementById('snakeGrid').style.borderColor = 'red';
+                    setTimeout(() => {
+                        document.getElementById('snakeGrid').style.borderColor = '#334155';
+                        isSnakeInvulnerable = false;
+                    }, 1000); // 1 sec invulnerability
+                }
+                // Do NOT return here, allow passing through
+            }
+            
+            if(!isGameActive) return; // In case they died in takeDamage
+
+            // Move Head
+            snakeHead = { x: nx, y: ny };
+            snakeBody.unshift(snakeHead); // Add new head
+            
+            // Check Food
+            const eatenIndex = snakeFoodItems.findIndex(f => f.x === nx && f.y === ny);
+            if (eatenIndex !== -1) {
+                const eaten = snakeFoodItems[eatenIndex];
+                if (eaten.val === snakeTargetAns) {
+                    // Correct!
+                    playSound('correct');
+                    snakeScoreVal += 50;
+                    gainXP(15);
+                    document.getElementById('snakeScore').textContent = snakeScoreVal;
+                    
+                    // Show Popup (Global Popup Used Now)
+                    const popup = document.getElementById('memPopup'); 
+                    document.getElementById('memPopupText').textContent = `${snakeN1} x ${snakeN2} = ${snakeTargetAns}`; 
+                    popup.classList.add('show'); 
+                    setTimeout(() => popup.classList.remove('show'), 1500);
+
+                    spawnSnakeFoodWave();
+                } else {
+                    // Wrong!
+                    playSound('wrong');
+                    takeDamage(`${snakeN1} x ${snakeN2} = ${snakeTargetAns}`);
+                    snakeBody.pop(); // Normal move
+                    if(currentLives > 0) spawnSnakeFoodWave();
+                }
+            } else {
+                snakeBody.pop(); // Remove tail
+            }
+            
+            renderSnake();
+        }
+        
+        function renderSnake() {
+            const gridEl = document.getElementById('snakeGrid');
+            const oldParts = gridEl.querySelectorAll('.snake-cell');
+            oldParts.forEach(p => p.remove());
+            
+            snakeBody.forEach((part, index) => {
+                const el = document.createElement('div');
+                el.className = index === 0 ? 'snake-cell snake-head' : 'snake-cell snake-body';
+                el.style.left = (part.x * snakeCellSize) + 'px';
+                el.style.top = (part.y * snakeCellSize) + 'px';
+                el.style.width = (snakeCellSize - 1) + 'px'; // -1 for gap
+                el.style.height = (snakeCellSize - 1) + 'px';
+                if(isSnakeInvulnerable) el.style.opacity = '0.5'; // Visual cue for ghost mode
+                gridEl.appendChild(el);
+            });
+        }
+        
+        /* --- WHACK-A-MOLE LOGIC (CHAOS MODE) --- */
+        let whackScoreVal = 0;
+        let whackTargetAns = 0;
+        let whackSpawnInterval = 400; // Faster tick for chaos
+        let whackStayTime = 1200;
+        let whackN1 = 0, whackN2 = 0;
+        let activeHoles = new Set();
+        
+        function startWhackGame() {
+            isGameActive = true;
+            document.getElementById('whackGameScreen').classList.remove('hidden');
+            whackScoreVal = 0; 
+            document.getElementById('whackScore').textContent = '0';
+            whackSpawnInterval = 400; // Check every 400ms if we should spawn
+            whackStayTime = 1300;
+            activeHoles.clear();
+            
+            // Build Grid (3x3)
+            const grid = document.getElementById('whackGrid');
+            grid.innerHTML = '';
+            for(let i=0; i<9; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'crater';
+                hole.id = `hole-${i}`;
+                
+                // Mole Container
+                const mole = document.createElement('div');
+                mole.className = 'mole';
+                mole.id = `mole-${i}`;
+                
+                // Alien Icon
+                const alien = document.createElement('div');
+                alien.className = 'mole-body';
+                const aliens = ["👽", "👾", "🤖", "👹", "💀"];
+                alien.textContent = aliens[Math.floor(Math.random() * aliens.length)];
+                
+                // Number Board
+                const board = document.createElement('div');
+                board.className = 'mole-number-board';
+                board.textContent = "?";
+                
+                mole.appendChild(alien);
+                mole.appendChild(board);
+                hole.appendChild(mole);
+                
+                // Click Handler
+                mole.onpointerdown = (e) => handleWhack(i, e);
+                
+                grid.appendChild(hole);
+            }
+            
+            nextWhackQuestion();
+            startWhackLoop();
+        }
+        
+        function nextWhackQuestion() {
+            const n1 = Math.floor(Math.random() * 10) + 1;
+            const nums = Array.from(selectedNumbers);
+            const n2 = nums.length > 0 ? nums[Math.floor(Math.random() * nums.length)] : Math.floor(Math.random() * 9) + 2;
+            whackN1 = n1; whackN2 = n2;
+            whackTargetAns = n1 * n2;
+            document.getElementById('whackQuestion').textContent = `${n1} x ${n2}`;
+        }
+        
+        function startWhackLoop() {
+            clearInterval(whackGameInterval);
+            whackGameInterval = setInterval(() => {
+                if(!isGameActive) { clearInterval(whackGameInterval); return; }
+                trySpawnRandomMole();
+                
+                // Dynamic difficulty
+                if(whackScoreVal > 500) { whackStayTime = 1100; }
+                if(whackScoreVal > 1000) { whackStayTime = 900; }
+                if(whackScoreVal > 2000) { whackStayTime = 800; }
+                
+            }, whackSpawnInterval);
+        }
+        
+        function trySpawnRandomMole() {
+            // Check current active count
+            if(activeHoles.size >= 4) return; // Max 4 moles at once to avoid chaos overload
+
+            // Chance to spawn
+            // 40% chance every tick (400ms)
+            if(Math.random() > 0.4) return;
+
+            // Find empty holes
+            let freeHoles = [];
+            for(let i=0; i<9; i++) {
+                if(!activeHoles.has(i)) freeHoles.push(i);
+            }
+            if(freeHoles.length === 0) return;
+            
+            // Pick ONE random hole
+            const holeIdx = freeHoles[Math.floor(Math.random() * freeHoles.length)];
+            activeHoles.add(holeIdx);
+            
+            const mole = document.getElementById(`mole-${holeIdx}`);
+            const board = mole.querySelector('.mole-number-board');
+            
+            // Decide Value: 30% Chance correct, 70% Wrong
+            let val;
+            if(Math.random() < 0.3) {
+                val = whackTargetAns;
+            } else {
+                val = whackTargetAns + (Math.floor(Math.random() * 10) - 5);
+                if(val === whackTargetAns || val <= 0) val = whackTargetAns + 1;
+            }
+            
+            board.textContent = val;
+            mole.dataset.val = val;
+            
+            // Animation Up
+            mole.classList.add('up');
+            
+            // Auto Down logic independent for this mole
+            setTimeout(() => {
+                if(isGameActive && activeHoles.has(holeIdx)) {
+                    mole.classList.remove('up');
+                    setTimeout(() => activeHoles.delete(holeIdx), 300); 
+                }
+            }, whackStayTime);
+        }
+        
+        function handleWhack(idx, e) {
+            e.stopPropagation(); // Prevent ghost clicks
+            if(!isGameActive || !activeHoles.has(idx)) return;
+            
+            const mole = document.getElementById(`mole-${idx}`);
+            const val = parseInt(mole.dataset.val);
+            
+            if(val === whackTargetAns) {
+                // Correct!
+                playSound('pop');
+                whackScoreVal += 100;
+                gainXP(15);
+                document.getElementById('whackScore').textContent = whackScoreVal;
+                
+                // Visual success on mole
+                mole.classList.remove('up');
+                activeHoles.delete(idx);
+                
+                const popup = document.getElementById('memPopup'); 
+                document.getElementById('memPopupText').textContent = `${whackN1} x ${whackN2} = ${whackTargetAns}`; 
+                popup.classList.add('show'); 
+                setTimeout(() => popup.classList.remove('show'), 1500);
+                
+                nextWhackQuestion(); 
+                
+            } else {
+                // Wrong!
+                playSound('wrong');
+                mole.classList.remove('up');
+                activeHoles.delete(idx);
+                takeDamage(`${whackN1} x ${whackN2} = ${whackTargetAns}`);
+            }
+        }
+
+        /* --- SOCCER GAME LOGIC --- */
+        let soccerScoreVal = 0;
+        let soccerTarget = 0;
+        let soccerN1 = 0, soccerN2 = 0;
+        let soccerIsKicking = false;
+
+        window.startSoccerGame = () => {
+            isGameActive = true;
+            document.getElementById('soccerGameScreen').classList.remove('hidden');
+            soccerScoreVal = 0;
+            document.getElementById('soccerScore').textContent = '0';
+            nextSoccerRound();
+        };
+
+        function nextSoccerRound() {
+            if(!isGameActive) return;
+            soccerIsKicking = false;
+            
+            // Reset Visuals
+            const goalie = document.getElementById('soccerGoalie');
+            goalie.style.left = '50%';
+            goalie.style.transform = 'translateX(-50%)'; // Reset scale/rotate
+            goalie.style.transition = 'all 0.4s ease-out';
+            
+            document.getElementById('goalMsg').style.transform = 'translate(-50%, -50%) scale(0)';
+            document.getElementById('saveMsg').style.transform = 'translate(-50%, -50%) scale(0)';
+            document.getElementById('soccerNet').classList.remove('goal-flash');
+
+            // Generate Question
+            const n1 = Math.floor(Math.random() * 10) + 1;
+            const nums = Array.from(selectedNumbers);
+            const n2 = nums.length > 0 ? nums[Math.floor(Math.random() * nums.length)] : Math.floor(Math.random() * 9) + 2;
+            soccerN1 = n1; soccerN2 = n2;
+            soccerTarget = n1 * n2;
+            document.getElementById('soccerQuestion').textContent = `${n1} x ${n2}`;
+
+            // Generate Options
+            let options = [soccerTarget];
+            while (options.length < 3) {
+                let f = soccerTarget + (Math.floor(Math.random() * 10) - 5);
+                if (f > 0 && f !== soccerTarget && !options.includes(f)) options.push(f);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            // Set Balls
+            for(let i=0; i<3; i++) {
+                const ball = document.getElementById(`ball${i}`);
+                ball.textContent = options[i];
+                ball.dataset.val = options[i];
+                ball.classList.remove('kicked-anim');
+                ball.style.opacity = '1';
+                ball.style.pointerEvents = 'auto';
+                ball.style.transform = 'none';
+            }
+        }
+
+        window.handleKick = (ballIdx) => {
+            if(soccerIsKicking || !isGameActive) return;
+            soccerIsKicking = true;
+            
+            const ball = document.getElementById(`ball${ballIdx}`);
+            const val = parseInt(ball.dataset.val);
+            const goalie = document.getElementById('soccerGoalie');
+            
+            // Disable all balls
+            for(let i=0; i<3; i++) {
+                document.getElementById(`ball${i}`).style.pointerEvents = 'none';
+                if(i !== ballIdx) document.getElementById(`ball${i}`).style.opacity = '0.3';
+            }
+
+            // Animate Kick (Balls fly STRAIGHT UP now)
+            playSound('pop'); 
+            ball.classList.add('kicked-anim');
+
+            setTimeout(() => {
+                if(val === soccerTarget) {
+                    // GOAL! (Correct Answer)
+                    // Goalie must dive AWAY from ball or stay wrong
+                    let diveDest = '50%';
+                    
+                    // If ball is left (0), goalie goes right or center
+                    if(ballIdx === 0) diveDest = (Math.random()>0.5) ? '80%' : '50%';
+                    // If ball is center (1), goalie goes left or right
+                    else if(ballIdx === 1) diveDest = (Math.random()>0.5) ? '20%' : '80%';
+                    // If ball is right (2), goalie goes left or center
+                    else if(ballIdx === 2) diveDest = (Math.random()>0.5) ? '20%' : '50%';
+                    
+                    goalie.style.left = diveDest;
+                    goalie.style.transform = 'translateX(-50%) rotate(45deg)'; // Fall over
+
+                    playSound('whistle');
+                    document.getElementById('goalMsg').style.transform = 'translate(-50%, -50%) scale(1)';
+                    document.getElementById('soccerNet').classList.add('goal-flash');
+                    createConfetti();
+                    
+                    document.body.classList.add('shake-wrong'); // Reuse shake anim
+                    setTimeout(() => document.body.classList.remove('shake-wrong'), 500);
+                    
+                    soccerScoreVal += 100;
+                    gainXP(25);
+                    document.getElementById('soccerScore').textContent = soccerScoreVal;
+
+                    setTimeout(nextSoccerRound, 2000);
+                } else {
+                    // SAVE! (Wrong Answer)
+                    // Goalie must dive TO the ball
+                    let saveDest = '50%';
+                    if(ballIdx === 0) saveDest = '20%'; // Left
+                    else if(ballIdx === 1) saveDest = '50%'; // Center
+                    else if(ballIdx === 2) saveDest = '80%'; // Right
+                    
+                    goalie.style.left = saveDest;
+                    goalie.style.transform = 'translateX(-50%) scale(1.3)'; // Big block
+                    
+                    playSound('wrong');
+                    document.getElementById('saveMsg').style.transform = 'translate(-50%, -50%) scale(1)';
+                    
+                    takeDamage(`${soccerN1} x ${soccerN2} = ${soccerTarget}`);
+                    
+                    if(currentLives > 0) setTimeout(nextSoccerRound, 1500);
+                }
+            }, 500); 
+        };
+
+
         window.initStudyMenu = () => { 
             const g = document.getElementById('studyButtonsGrid'); g.innerHTML = '';
             for(let i=1; i<=10; i++) { 
@@ -1134,6 +2021,8 @@
         
         window.openLeaderboard = () => {
             playSound('click'); hideAll();
+            // Liderlik tablosu açılırken oyun modu kısıtlamalarını kaldır
+            document.body.classList.remove('game-mode');
             document.getElementById('leaderboardScreen').classList.remove('hidden');
             ensureBotsInitialized(); simulateBotActivity();
             const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
@@ -1148,7 +2037,6 @@
                 const iconClass = botAvatar.class || "";
                 let changeHtml = ''; if(!u.isPlayer && u.change > 0) changeHtml = `<span class="xp-change xp-up">▲${u.change}</span>`;
                 
-                // HTML yapısı CSS grid'e uyumlu hale getirildi (3 çocuk eleman)
                 row.innerHTML = `
                     <div class="flex justify-center"><div class="rank-badge">${rank}</div></div>
                     <div class="flex items-center gap-3 overflow-hidden">
